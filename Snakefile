@@ -73,7 +73,7 @@ rule flye:
     input:
         fq = ont_raw
     output:
-        directory('output/030_flye/de_novo')
+        'output/030_flye/de_novo/00_assembly/scaffolds.fasta'
     params:
         outdir = 'output/030_flye/de_novo',
         size = '800m'
@@ -85,7 +85,6 @@ rule flye:
         flye_container
     shell:
         'flye '
-        '--resume '
         '--asm-coverage 30 '
         '--nano-raw {input.fq} '
         '--genome-size {params.size} '
