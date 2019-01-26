@@ -66,7 +66,7 @@ rule target:
     input:
         ('output/020_meraculous/k71_diplo2/'
          'meraculous_final_results/final.scaffolds.fa'),
-        'output/030_flye/de_novo'
+        'output/030_flye/de_novo/00_assembly/scaffolds.fasta'
 
 # 03 flye
 rule flye:
