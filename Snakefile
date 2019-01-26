@@ -85,17 +85,18 @@ rule flye:
         flye_container
     shell:
         'flye '
+        '--resume '
+        '--asm-coverage 30 '
         '--nano-raw {input.fq} '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
         '--threads {threads} '
-        '--iterations 4 '
         '&> {log}'
 
 # 02 meraculous
 rule meraculous:
     input:
-        fq = 'output/010_trim-decon/vvul.fq.gz',
+        fq = 'output/010_trim-decon/pe_reads.fq.gz',
         config = ('output/020_meraculous/'
                   'k{k}_diplo{diplo}/config.txt')
     output:
@@ -119,7 +120,7 @@ rule meraculous:
 
 rule meraculous_config:
     input:
-        fq = 'output/010_trim-decon/vvul.fq.gz'
+        fq = 'output/010_trim-decon/pe_reads.fq.gz'
     output:
         config = ('output/020_meraculous/'
                   'k{k}_diplo{diplo}/config.txt'),
@@ -144,7 +145,7 @@ rule trim_decon:
         r1 = 'output/010_trim-decon/r1.fq.gz',
         r2 = 'output/010_trim-decon/r2.fq.gz'
     output:
-        fq = 'output/010_trim-decon/vvul.fq.gz',
+        fq = 'output/010_trim-decon/pe_reads.fq.gz',
         f_stats = 'output/010_trim-decon/filter-stats.txt',
         t_stats = 'output/010_trim-decon/trim-stats.txt'
     log:
