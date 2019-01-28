@@ -85,6 +85,7 @@ rule flye:
         flye_container
     shell:
         'flye '
+        '--resume '
         '--asm-coverage 30 '
         '--nano-raw {input.fq} '
         '--genome-size {params.size} '
@@ -105,7 +106,7 @@ rule meraculous:
         outdir = 'output/020_meraculous/k{k}_diplo{diplo}',
         dmin = '0'
     threads:
-        meraculous_threads
+        min(50, meraculous_threads)
     log:
         'output/logs/020_meraculous/k{k}_diplo{diplo}.log'
     singularity:
@@ -126,7 +127,7 @@ rule meraculous_config:
     threads:
         1
     params:
-        threads = meraculous_threads,
+        threads = min(50, meraculous_threads),
         dmin = '0'
     run:
         write_config_file(
