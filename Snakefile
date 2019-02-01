@@ -110,7 +110,7 @@ rule busco:
         'cd {params.wd} || exit 1 ; '
         'run_BUSCO.py '
         '--force '
-        '--tmp_path \"$(mktemp)\" '
+        '--tmp_path $(mktemp) '
         '--in {params.fasta} '
         '--out {wildcards.name} '
         '--lineage {params.lineage} '
