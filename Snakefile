@@ -62,18 +62,54 @@ with open(meraculous_config_file, 'rt') as f:
 #########
 # RULES #
 #########
+
 rule target:
     input:
         ('output/020_meraculous/k71_diplo2/'
          'meraculous_final_results/final.scaffolds.fa'),
-        'output/030_flye/de_novo/00_assembly/scaffolds.fasta'
+        'output/030_flye/de_novo/scaffolds.fasta',
+        'output/050_busco/run_flye_denovo/full_table_flye_denovo.tsv'
+
+# 05 busco
+rule busco:
+    input:
+        fasta = 'output/030_flye/de_novo/scaffolds.fasta'
+        lineage = 'data/busco/endopterygota_odb9'
+    output:
+        'output/050_busco/run_flye_denovo/full_table_flye_denovo.tsv'
+    log:
+        log = 'output/logs/060_busco/busco_flye_denovo.log'
+    params:
+        wd = 'output/050_busco',
+        name = 'flye_denovo',
+        fasta = lambda wildcards, input: resolve_path(input.fasta),
+        lineage = lambda wildcards, input: resolve_path(input.lineage),
+        log = lambda wildcards, log: resolve_path(log.log)
+    threads:
+        meraculous_threads
+    singularity:
+        busco_container
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'run_BUSCO.py '
+        '--force '
+        '--in {params.fasta} '
+        '--out {params.name} '
+        '--lineage {params.lineage} '
+        '--cpu {threads} '
+        '--species fly '
+        '--mode genome '
+        '&> {params.log}'
+
+# 04 wacky genome combinations
+
 
 # 03 flye
 rule flye:
     input:
         fq = ont_raw
     output:
-        'output/030_flye/de_novo/00_assembly/scaffolds.fasta'
+        'output/030_flye/de_novo/scaffolds.fasta'
     params:
         outdir = 'output/030_flye/de_novo',
         size = '800m'
