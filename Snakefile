@@ -2,7 +2,7 @@
 
 import os
 import pathlib2
-
+import tempfile
 
 #############
 # FUNCTIONS #
@@ -101,7 +101,8 @@ rule busco:
     params:
         wd = 'output/050_busco',
         fasta = lambda wildcards, input: resolve_path(input.fasta),
-        lineage = lambda wildcards, input: resolve_path(input.lineage)
+        lineage = lambda wildcards, input: resolve_path(input.lineage),
+        tmpdir = tempfile.mkdtemp()
     threads:
         meraculous_threads
     singularity:
@@ -110,7 +111,7 @@ rule busco:
         'cd {params.wd} || exit 1 ; '
         'run_BUSCO.py '
         '--force '
-        '--tmp_path \"$(mktemp)\" '
+        '--tmp_path {params.tmpdir} '
         '--in {params.fasta} '
         '--out {wildcards.name} '
         '--lineage {params.lineage} '
