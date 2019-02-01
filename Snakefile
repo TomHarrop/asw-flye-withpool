@@ -8,6 +8,17 @@ import pathlib2
 # FUNCTIONS #
 #############
 
+
+def busco_wildcard_resolver(wildcards):
+    name_to_fasta = {
+        'flye_denovo': 'output/030_flye/de_novo/scaffolds.fasta',
+        'meraculous_filtered': '',
+        'meraculous': ('output/020_meraculous/k71_diplo2/'
+                       'meraculous_final_results/final.scaffolds.fa')
+    }
+    return({'fasta': name_to_fasta[wildcards.name]})
+
+
 def write_config_file(fastq,
                       k,
                       diplo_mode,
@@ -70,24 +81,25 @@ rule target:
     input:
         ('output/020_meraculous/k71_diplo2/'
          'meraculous_final_results/final.scaffolds.fa'),
-        'output/030_flye/de_novo/scaffolds.fasta',
-        'output/050_busco/run_flye_denovo/full_table_flye_denovo.tsv'
+        'output/030_flye/de_novo/scaffolds.fasta'
 
 # 05 busco
-
-### FIXME: species should be tribolium2012
+rule busco_jobs:
+    input:
+        expand('output/050_busco/run_{name}/full_table_{name}.tsv',
+               name=['flye_denovo',
+                     'meraculous'])
 
 rule busco:
     input:
-        fasta = 'output/030_flye/de_novo/scaffolds.fasta',
+        unpack(busco_wildcard_resolver),
         lineage = 'data/busco/endopterygota_odb9'
     output:
-        'output/050_busco/run_flye_denovo/full_table_flye_denovo.tsv'
+        'output/050_busco/run_{name}/full_table_{name}.tsv'
     log:
-        resolve_path('output/logs/060_busco/busco_flye_denovo.log')
+        resolve_path('output/logs/060_busco/busco_{name}.log')
     params:
         wd = 'output/050_busco',
-        name = 'flye_denovo',
         fasta = lambda wildcards, input: resolve_path(input.fasta),
         lineage = lambda wildcards, input: resolve_path(input.lineage)
     threads:
@@ -99,14 +111,14 @@ rule busco:
         'run_BUSCO.py '
         '--force '
         '--in {params.fasta} '
-        '--out {params.name} '
+        '--out {wildcards.name} '
         '--lineage {params.lineage} '
         '--cpu {threads} '
-        '--species fly '
+        '--species tribolium2012 '
         '--mode genome '
         '&> {log}'
 
-# 04 wacky genome combinations
+# 04 wacky genome combinations + polishing
 
 
 # 03 flye
@@ -126,7 +138,6 @@ rule flye:
         flye_container
     shell:
         'flye '
-        '--resume '
         '--asm-coverage 30 '
         '--nano-raw {input.fq} '
         '--genome-size {params.size} '
@@ -135,6 +146,9 @@ rule flye:
         '&> {log}'
 
 # 02 meraculous
+# rule filter_meraculous:
+
+
 rule meraculous:
     input:
         fq = 'output/010_trim-decon/pe_reads.fq.gz',
