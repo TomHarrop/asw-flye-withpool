@@ -81,13 +81,12 @@ rule busco:
     output:
         'output/050_busco/run_flye_denovo/full_table_flye_denovo.tsv'
     log:
-        log = 'output/logs/060_busco/busco_flye_denovo.log'
+        resolve_path('output/logs/060_busco/busco_flye_denovo.log')
     params:
         wd = 'output/050_busco',
         name = 'flye_denovo',
         fasta = lambda wildcards, input: resolve_path(input.fasta),
-        lineage = lambda wildcards, input: resolve_path(input.lineage),
-        log = lambda wildcards, log: resolve_path(log.log)
+        lineage = lambda wildcards, input: resolve_path(input.lineage)
     threads:
         meraculous_threads
     singularity:
@@ -102,7 +101,7 @@ rule busco:
         '--cpu {threads} '
         '--species fly '
         '--mode genome '
-        '&> {params.log}'
+        '&> {log}'
 
 # 04 wacky genome combinations
 
