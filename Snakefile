@@ -74,6 +74,9 @@ rule target:
         'output/050_busco/run_flye_denovo/full_table_flye_denovo.tsv'
 
 # 05 busco
+
+### FIXME: species should be tribolium2012
+
 rule busco:
     input:
         fasta = 'output/030_flye/de_novo/scaffolds.fasta',
