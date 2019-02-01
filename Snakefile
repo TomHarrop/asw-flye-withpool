@@ -27,6 +27,9 @@ def write_config_file(fastq,
     return True
 
 
+def resolve_path(x):
+    return str(pathlib2.Path(x).resolve())
+
 ###########
 # GLOBALS #
 ###########
