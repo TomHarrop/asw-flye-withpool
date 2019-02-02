@@ -152,11 +152,10 @@ rule busco:
 # 04 wacky genome combinations + polishing
 rule flye_round_2_meraculous:
     input:
-        fq = ont_raw,
         subassemblies = [('output/020_meraculous/k71_diplo2/'
                           'meraculous_final_results/'
                           'final.scaffolds_filtered.fa'),
-                         'output/030_flye/de_novo_round_2/scaffolds.fasta']
+                         'output/030_flye/denovo_full/scaffolds_filtered.fasta']
     output:
         'output/040_merged_assemblies/flye_round_2_meraculous/scaffolds.fasta'
     params:
@@ -172,7 +171,6 @@ rule flye_round_2_meraculous:
         'flye '
         '--subassemblies {input.subassemblies} '
         '--iterations 0 '
-        '--nano-raw {input.fq} '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
         '--threads {threads} '
@@ -180,25 +178,23 @@ rule flye_round_2_meraculous:
 
 
 # 03 flye
-rule flye_round_2:
+rule flye_denovo_full:
     input:
-        fq = ont_raw,
-        subassembly = 'output/030_flye/de_novo/scaffolds_filtered.fasta'
+        fq = ont_raw
     output:
-        'output/030_flye/de_novo_round_2/scaffolds.fasta'
+        'output/030_flye/denovo_full/scaffolds.fasta'
     params:
-        outdir = 'output/030_flye/de_novo_round_2',
+        outdir = 'output/030_flye/denovo_full',
         size = '800m'
     threads:
         meraculous_threads
     log:
-        'output/logs/030_flye/de_novo_round_2.log'
+        'output/logs/030_flye/denovo_full.log'
     singularity:
         flye_container
     shell:
         'flye '
-        '--subassemblies {input.subassembly} '
-        '--iterations 0 '
+        '--iterations 1 '
         '--nano-raw {input.fq} '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
