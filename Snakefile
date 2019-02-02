@@ -3,6 +3,7 @@
 import os
 import pathlib2
 import tempfile
+from Bio import SeqIO
 
 #############
 # FUNCTIONS #
@@ -17,6 +18,22 @@ def busco_wildcard_resolver(wildcards):
                        'meraculous_final_results/final.scaffolds.fa')
     }
     return({'fasta': name_to_fasta[wildcards.name]})
+
+
+def filter_fasta_by_length(input_fasta,
+                           output_fasta,
+                           length=10000):
+    '''
+    Read input_fasta file and write contigs longer than length to output_fasta
+    '''
+    SeqIO.write(sequences=(rec for rec in SeqIO.parse(input_fasta, 'fasta')
+                           if len(rec) >= length),
+                handle=output_fasta,
+                format='fasta')
+
+
+def resolve_path(x):
+    return str(pathlib2.Path(x).resolve())
 
 
 def write_config_file(fastq,
@@ -36,10 +53,6 @@ def write_config_file(fastq,
     with open(config_file, 'wt') as f:
         f.write(my_conf)
     return True
-
-
-def resolve_path(x):
-    return str(pathlib2.Path(x).resolve())
 
 ###########
 # GLOBALS #
@@ -83,12 +96,26 @@ rule target:
          'meraculous_final_results/final.scaffolds.fa'),
         'output/030_flye/de_novo/scaffolds.fasta'
 
+
+# general filtering rule
+rule filter:
+    input:
+        fa = '{fa_name}.fasta'
+    output:
+        fa = '{fa_name}_filtered.fasta'
+    params:
+        length = 10000
+    run:
+        filter_fasta_by_length(input.fa, output.fa, params.length)
+
+
 # 05 busco
 rule busco_jobs:
     input:
         expand('output/050_busco/run_{name}/full_table_{name}.tsv',
                name=['flye_denovo',
                      'meraculous'])
+
 
 rule busco:
     input:
@@ -124,6 +151,30 @@ rule busco:
 
 
 # 03 flye
+rule flye_round_2:
+    input:
+        fq = ont_raw,
+        subassembly = 'output/030_flye/de_novo/scaffolds_filtered.fasta'
+    output:
+        'output/030_flye/de_novo_round_2/scaffolds.fasta'
+    params:
+        outdir = 'output/030_flye/de_novo_round_2',
+        size = '800m'
+    threads:
+        meraculous_threads
+    log:
+        'output/logs/030_flye/de_novo_round_2.log'
+    singularity:
+        flye_container
+    shell:
+        'flye '
+        '--subassemblies {input.subassembly} '
+        '--nano-raw {input.fq} '
+        '--genome-size {params.size} '
+        '--out-dir {params.outdir} '
+        '--threads {threads} '
+        '&> {log}'
+
 rule flye:
     input:
         fq = ont_raw
