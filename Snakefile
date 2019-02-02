@@ -102,9 +102,9 @@ rule target:
 # general filtering rule
 rule filter:
     input:
-        fa = '{fa_name}.fa{sta}'
+        fa = '{fa_name}.{fasta}'
     output:
-        fa = '{fa_name}_filtered.fa{sta}'
+        fa = '{fa_name}_filtered.{fasta}'
     params:
         length = 10000
     run:
