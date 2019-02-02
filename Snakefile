@@ -94,15 +94,16 @@ rule target:
     input:
         ('output/020_meraculous/k71_diplo2/'
          'meraculous_final_results/final.scaffolds.fa'),
-        'output/030_flye/de_novo/scaffolds.fasta'
+        'output/030_flye/de_novo/scaffolds.fasta',
+        'output/030_flye/de_novo_round_2/scaffolds.fasta'
 
 
 # general filtering rule
 rule filter:
     input:
-        fa = '{fa_name}.fasta'
+        fa = '{fa_name}.fa{sta}'
     output:
-        fa = '{fa_name}_filtered.fasta'
+        fa = '{fa_name}_filtered.fa{sta}'
     params:
         length = 10000
     run:
