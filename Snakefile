@@ -194,6 +194,7 @@ rule flye_denovo_full:
     shell:
         'flye '
         '--iterations 1 '
+        '--resume '
         '--nano-raw {input.fq} '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
