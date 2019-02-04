@@ -15,7 +15,10 @@ def busco_wildcard_resolver(wildcards):
         'flye_denovo': 'output/030_flye/de_novo/scaffolds.fasta',
         'meraculous_filtered': '',
         'meraculous': ('output/020_meraculous/k71_diplo2/'
-                       'meraculous_final_results/final.scaffolds.fa')
+                       'meraculous_final_results/final.scaffolds.fa'),
+        'flye_denovo_full': 'output/030_flye/denovo_full/scaffolds.fasta',
+        'flye_full_meraculous': ('output/040_merged_assemblies/'
+                                 'flye_full_meraculous/scaffolds.fasta')
     }
     return({'fasta': name_to_fasta[wildcards.name]})
 
@@ -115,7 +118,9 @@ rule busco_jobs:
     input:
         expand('output/050_busco/run_{name}/full_table_{name}.tsv',
                name=['flye_denovo',
-                     'meraculous'])
+                     'meraculous',
+                     'flye_denovo_full',
+                     'flye_full_meraculous'])
 
 
 rule busco:
