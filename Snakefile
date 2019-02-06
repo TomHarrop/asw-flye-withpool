@@ -18,7 +18,8 @@ def busco_wildcard_resolver(wildcards):
                        'meraculous_final_results/final.scaffolds.fa'),
         'flye_denovo_full': 'output/030_flye/denovo_full/scaffolds.fasta',
         'flye_full_meraculous': ('output/040_merged_assemblies/'
-                                 'flye_full_meraculous/scaffolds.fasta')
+                                 'flye_full_meraculous/scaffolds.fasta'),
+        'canu': 'output/035_canu/canu.contigs.fasta'
     }
     return({'fasta': name_to_fasta[wildcards.name]})
 
@@ -78,6 +79,7 @@ mer_container = 'shub://TomHarrop/singularity-containers:meraculous_2.2.6'
 r_container = 'shub://TomHarrop/singularity-containers:r_3.5.1'
 busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 flye_container = 'shub://TomHarrop/singularity-containers:flye_2.4'
+canu_container = 'shub://TomHarrop/singularity-containers:canu_1.8'
 
 
 ########
@@ -120,7 +122,8 @@ rule busco_jobs:
                name=['flye_denovo',
                      'meraculous',
                      'flye_denovo_full',
-                     'flye_full_meraculous'])
+                     'flye_full_meraculous',
+                     'canu'])
 
 
 rule busco:
@@ -178,6 +181,34 @@ rule flye_full_meraculous:
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
         '--threads {threads} '
+        '&> {log}'
+
+
+# 035 canu (since flye didn't work great)
+rule canu:
+    input:
+        fq = ont_raw
+    output:
+        'output/035_canu/canu.contigs.fasta'
+    params:
+        outdir = 'output/035_canu',
+        size = '800m',
+        prefix = 'canu'
+    threads:
+        meraculous_threads
+    log:
+        'output/logs/035_canu/canu.log'
+    singularity:
+        flye_container
+    shell:
+        'canu '
+        '-d {params.outdir} '
+        '-p {params.prefix} '
+        'genomeSize={params.size} '
+        'corMhapSensitivity=high '
+        'corMinCoverage=0 '
+        'corOutCoverage=100 '        
+        '-nanopore-raw {input.fq} '
         '&> {log}'
 
 
