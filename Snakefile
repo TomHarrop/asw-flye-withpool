@@ -199,7 +199,7 @@ rule canu:
     log:
         'output/logs/035_canu/canu.log'
     singularity:
-        flye_container
+        canu_container
     shell:
         'canu '
         '-d {params.outdir} '
