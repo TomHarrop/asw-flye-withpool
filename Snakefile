@@ -10,18 +10,16 @@ from Bio import SeqIO
 #############
 
 
-def busco_wildcard_resolver(wildcards):
-    name_to_fasta = {
-        'flye_denovo': 'output/030_flye/de_novo/scaffolds.fasta',
-        'meraculous_filtered': '',
-        'meraculous': ('output/020_meraculous/k71_diplo2/'
-                       'meraculous_final_results/final.scaffolds.fa'),
-        'flye_denovo_full': 'output/030_flye/denovo_full/scaffolds.fasta',
-        'flye_full_meraculous': ('output/040_merged_assemblies/'
-                                 'flye_full_meraculous/scaffolds.fasta'),
-        'canu': 'output/035_canu/canu.contigs.fasta'
-    }
-    return({'fasta': name_to_fasta[wildcards.name]})
+def assembly_catalog_resolver(wildcards):
+    print (wildcards.name)
+    if wildcards.name in assembly_catalog:
+        return({'fasta': assembly_catalog[wildcards.name]})
+    elif wildcards.name in polished_assemblies:
+        return({'fasta': polished_assemblies[wildcards.name]})
+    elif wildcards.name in short_read_polished_assemblies:
+        return({'fasta': short_read_polished_assemblies[wildcards.name]})
+    else:
+        raise ValueError('missing {} in catalog'.format(wildcards.name))
 
 
 def filter_fasta_by_length(input_fasta,
@@ -67,10 +65,11 @@ r1_raw = ['data/illumina/pe100/ASW_1.fastq.gz',
 r2_raw = ['data/illumina/pe100/ASW_2.fastq.gz',
           'data/illumina/pe150/ASW_2.fastq.gz']
 ont_raw = 'data/nanopore/merged_sorted.fq.gz'
+ont_tmp = 'output/000_tmp/merged_sorted.fq'
 bbduk_ref = '/phix174_ill.ref.fa.gz'
 bbduk_adaptors = '/adapters.fa'
 meraculous_config_file = 'src/meraculous_config.txt'
-meraculous_threads = 64
+meraculous_threads = 72
 
 # containers
 kraken_container = 'shub://TomHarrop/singularity-containers:kraken_2.0.7beta'
@@ -80,7 +79,41 @@ r_container = 'shub://TomHarrop/singularity-containers:r_3.5.1'
 busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 flye_container = 'shub://TomHarrop/singularity-containers:flye_2.4'
 canu_container = 'shub://TomHarrop/singularity-containers:canu_1.8'
+minimap_container = 'shub://TomHarrop/singularity-containers:minimap2_2.11r797'
+racon_container = 'shub://TomHarrop/singularity-containers:racon_1.3.2'
+pigz_container = 'shub://TomHarrop/singularity-containers:pigz_2.4.0'
+bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
 
+
+# assembly catalog
+assembly_catalog = {
+    'flye_denovo': 'output/030_flye/de_novo/scaffolds.fasta',
+    'meraculous': ('output/020_meraculous/k71_diplo2/'
+                   'meraculous_final_results/final.scaffolds.fa'),
+    'flye_denovo_full': 'output/030_flye/denovo_full/scaffolds.fasta',
+    'flye_full_meraculous': ('output/040_merged_assemblies/'
+                             'flye_full_meraculous/scaffolds.fasta'),
+    'canu': 'output/035_canu/canu.contigs.fasta'
+}
+
+polished_assemblies = {
+    'flye_denovo_full_polished': ('output/045_long_read_polishing/'
+                                  'flye_denovo_full/'
+                                  'flye_denovo_full.racon.fasta'),
+    'meraculous_polished': ('output/045_long_read_polishing/meraculous/'
+                            'meraculous.racon.fasta'),
+    'canu_polished': 'output/045_long_read_polishing/canu/canu.racon.fasta'}
+
+# trying to add the short read polishing breaks here
+#     'flye_denovo_full_both': ('output/045_short_read_polishing/'
+#                               'flye_denovo_full_both/'
+#                               'flye_denovo_full_both.racon.fasta'),
+#     'meraculous_both': ('output/045_short_read_polishing/'
+#                         'meraculous_both/'
+#                         'meraculous_both.racon.fasta'),
+#     'canu_both': ('output/045_short_read_polishing/'
+#                   'canu_both/canu_both.racon.fasta')
+# }
 
 ########
 # MAIN #
@@ -97,10 +130,9 @@ with open(meraculous_config_file, 'rt') as f:
 
 rule target:
     input:
-        ('output/020_meraculous/k71_diplo2/'
-         'meraculous_final_results/final.scaffolds.fa'),
-        'output/030_flye/de_novo/scaffolds.fasta',
-        'output/040_merged_assemblies/flye_full_meraculous/scaffolds.fasta'
+        expand('output/050_busco/run_{name}/full_table_{name}.tsv',
+               name=list(assembly_catalog.keys()) +
+               list(polished_assemblies.keys()))
 
 
 # general filtering rule
@@ -115,32 +147,23 @@ rule filter:
         filter_fasta_by_length(input.fa, output.fa, params.length)
 
 
-# 05 busco
-rule busco_jobs:
-    input:
-        expand('output/050_busco/run_{name}/full_table_{name}.tsv',
-               name=['flye_denovo',
-                     'meraculous',
-                     'flye_denovo_full',
-                     'flye_full_meraculous',
-                     'canu'])
-
-
 rule busco:
     input:
-        unpack(busco_wildcard_resolver),
+        unpack(assembly_catalog_resolver),
         lineage = 'data/busco/endopterygota_odb9'
     output:
         'output/050_busco/run_{name}/full_table_{name}.tsv'
     log:
-        resolve_path('output/logs/060_busco/busco_{name}.log')
+        resolve_path('output/logs/050_busco/busco_{name}.log')
     params:
         wd = 'output/050_busco',
         fasta = lambda wildcards, input: resolve_path(input.fasta),
         lineage = lambda wildcards, input: resolve_path(input.lineage),
         tmpdir = tempfile.mkdtemp()
     threads:
-        meraculous_threads
+        meraculous_threads // 2
+    priority:
+        1
     singularity:
         busco_container
     shell:
@@ -157,6 +180,107 @@ rule busco:
         '&> {log}'
 
 # 04 wacky genome combinations + polishing
+rule polish_short_reads:
+    input:
+        unpack(assembly_catalog_resolver),
+        aln = 'output/045_short_read_polishing/{name}/aln.sam',
+        fq = 'output/000_tmp/pe_reads.fq'
+    output:
+        'output/045_short_read_polishing/{name}/{name}.racon.fasta'
+    log:
+        'output/logs/045_short_read_polishing/{name}_racon.log'
+    threads:
+        meraculous_threads // 3
+    priority:
+        0
+    singularity:
+        racon_container
+    shell:
+        'racon '
+        '-t {threads} '
+        '{input.fq} '
+        '{input.aln} '
+        '{input.fasta} '
+        '> {output} '
+        '2> {log}'
+
+
+rule polish_long_reads:
+    input:
+        unpack(assembly_catalog_resolver),
+        aln = 'output/045_long_read_polishing/{name}/aln.sam',
+        fq = ont_tmp,
+    output:
+        'output/045_long_read_polishing/{name}/{name}.racon.fasta'
+    log:
+        'output/logs/045_long_read_polishing/{name}_racon.log'
+    threads:
+        meraculous_threads // 3
+    priority:
+        0
+    singularity:
+        racon_container
+    shell:
+        'racon '
+        '-t {threads} '
+        '{input.fq} '
+        '{input.aln} '
+        '{input.fasta} '
+        '> {output} '
+        '2> {log}'
+
+
+rule map_short_reads:
+    input:
+        unpack(assembly_catalog_resolver),
+        fq = 'output/000_tmp/pe_reads.fq'
+    output:
+        'output/045_short_read_polishing/{name}/aln.sam'
+    params:
+        prefix = 'output/045_short_read_polishing/{name}/index'
+    log:
+        'output/logs/045_short_read_polishing/{name}_bwa-mem.log'
+    threads:
+        meraculous_threads // 2
+    singularity:
+        bwa_container
+    shell:
+        'bwa index '
+        '-p {params.prefix} '
+        '{input.fasta} '
+        '>{log} '
+        '; '
+        'bwa mem '
+        '-t {threads} '
+        '-p '
+        '{params.prefix} '
+        '{input.fq} '
+        '> {output} '
+        '2>> {log}'
+
+rule map_long_reads:
+    input:
+        unpack(assembly_catalog_resolver),
+        fq = ont_tmp
+    output:
+        'output/045_long_read_polishing/{name}/aln.sam'
+    log:
+        'output/logs/045_long_read_polishing/{name}_minimap.log'
+    threads:
+        meraculous_threads // 2
+    singularity:
+        minimap_container
+    shell:
+        'minimap2 '
+        '-t {threads} '
+        '-ax '
+        'map-ont '
+        '{input.fasta} '
+        '{input.fq} '
+        '> {output} '
+        '2> {log}'
+
+
 rule flye_full_meraculous:
     input:
         subassemblies = [('output/020_meraculous/k71_diplo2/'
@@ -187,7 +311,7 @@ rule flye_full_meraculous:
 # 035 canu (since flye didn't work great)
 rule canu:
     input:
-        fq = ont_raw
+        fq = ont_tmp
     output:
         'output/035_canu/canu.contigs.fasta'
     params:
@@ -215,7 +339,7 @@ rule canu:
 # 03 flye
 rule flye_denovo_full:
     input:
-        fq = ont_raw
+        fq = ont_tmp
     output:
         'output/030_flye/denovo_full/scaffolds.fasta'
     params:
@@ -239,7 +363,7 @@ rule flye_denovo_full:
 
 rule flye:
     input:
-        fq = ont_raw
+        fq = ont_tmp
     output:
         'output/030_flye/de_novo/scaffolds.fasta'
     params:
@@ -262,8 +386,6 @@ rule flye:
 
 # 02 meraculous
 # rule filter_meraculous:
-
-
 rule meraculous:
     input:
         fq = 'output/010_trim-decon/pe_reads.fq.gz',
@@ -376,3 +498,32 @@ rule join_reads:
         'cat {input.r1} > {output.r1} & '
         'cat {input.r2} > {output.r2} & '
         'wait'
+
+# speed up long read stuff with tmp unzip folder
+rule tmp_unzip:
+    input:
+        ont_raw
+    output:
+        ont_tmp
+    threads:
+        3
+    singularity:
+        pigz_container
+    shell:
+        'pigz -dc '
+        '{input} '
+        '>{output}'
+
+rule tmp_unzip_short:
+    input:
+        'output/010_trim-decon/pe_reads.fq.gz'
+    output:
+        'output/000_tmp/pe_reads.fq'
+    threads:
+        3
+    singularity:
+        pigz_container
+    shell:
+        'pigz -dc '
+        '{input} '
+        '>{output}'
