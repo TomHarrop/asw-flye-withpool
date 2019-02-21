@@ -103,7 +103,7 @@ polished_assemblies = {
     'meraculous_polished': ('output/045_long_read_polishing/meraculous/'
                             'meraculous.racon.fasta'),
     'canu_polished': 'output/045_long_read_polishing/canu/canu.racon.fasta',
-    'canu_polished2': 'output/045_shor_read_polishing/canu/canu.racon.fasta'}
+    'canu_polished2': 'output/045_short_read_polishing/canu/canu.racon.fasta'}
 
 # trying to add the short read polishing breaks here
 #     'flye_denovo_full_both': ('output/045_short_read_polishing/'
