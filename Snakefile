@@ -11,7 +11,6 @@ from Bio import SeqIO
 
 
 def assembly_catalog_resolver(wildcards):
-    print (wildcards.name)
     if wildcards.name in assembly_catalog:
         return({'fasta': assembly_catalog[wildcards.name]})
     elif wildcards.name in polished_assemblies:
@@ -100,8 +99,13 @@ polished_assemblies = {
     'flye_denovo_full_polished': ('output/045_long_read_polishing/'
                                   'flye_denovo_full/'
                                   'flye_denovo_full.racon.fasta'),
+    'flye_denovo_full_polished2': ('output/045_short_read_polishing/'
+                                   'flye_denovo_full/'
+                                   'flye_denovo_full.racon.fasta'),
     'meraculous_polished': ('output/045_long_read_polishing/meraculous/'
                             'meraculous.racon.fasta'),
+    'meraculous_polished2': ('output/045_short_read_polishing/meraculous/'
+                             'meraculous.racon.fasta'),
     'canu_polished': 'output/045_long_read_polishing/canu/canu.racon.fasta',
     'canu_polished2': 'output/045_short_read_polishing/canu/canu.racon.fasta'}
 
