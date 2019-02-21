@@ -109,17 +109,6 @@ polished_assemblies = {
     'canu_polished': 'output/045_long_read_polishing/canu/canu.racon.fasta',
     'canu_polished2': 'output/045_short_read_polishing/canu/canu.racon.fasta'}
 
-# trying to add the short read polishing breaks here
-#     'flye_denovo_full_both': ('output/045_short_read_polishing/'
-#                               'flye_denovo_full_both/'
-#                               'flye_denovo_full_both.racon.fasta'),
-#     'meraculous_both': ('output/045_short_read_polishing/'
-#                         'meraculous_both/'
-#                         'meraculous_both.racon.fasta'),
-#     'canu_both': ('output/045_short_read_polishing/'
-#                   'canu_both/canu_both.racon.fasta')
-# }
-
 ########
 # MAIN #
 ########
@@ -253,7 +242,7 @@ rule map_short_reads:
         'bwa index '
         '-p {params.prefix} '
         '{input.fasta} '
-        '>{log} '
+        '2> {log} '
         '; '
         'bwa mem '
         '-t {threads} '
