@@ -184,7 +184,7 @@ rule polish_short_reads:
     log:
         'output/logs/045_short_read_polishing/{name}_racon.log'
     threads:
-        meraculous_threads // 3
+        meraculous_threads
     priority:
         0
     singularity:
@@ -209,7 +209,7 @@ rule polish_long_reads:
     log:
         'output/logs/045_long_read_polishing/{name}_racon.log'
     threads:
-        meraculous_threads // 3
+        meraculous_threads
     priority:
         0
     singularity:
