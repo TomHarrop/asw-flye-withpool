@@ -15,8 +15,8 @@ def assembly_catalog_resolver(wildcards):
         return({'fasta': assembly_catalog[wildcards.name]})
     elif wildcards.name in polished_assemblies:
         return({'fasta': polished_assemblies[wildcards.name]})
-    elif wildcards.name in short_read_polished_assemblies:
-        return({'fasta': short_read_polished_assemblies[wildcards.name]})
+    elif wildcards.name in merged_assemblies:
+        return({'fasta': merged_assemblies[wildcards.name]})
     else:
         raise ValueError('missing {} in catalog'.format(wildcards.name))
 
@@ -109,6 +109,15 @@ polished_assemblies = {
     'canu_polished': 'output/045_long_read_polishing/canu/canu.racon.fasta',
     'canu_polished2': 'output/045_short_read_polishing/canu/canu.racon.fasta'}
 
+merged_assemblies = {
+    'canu_flye':
+        'output/040_merged_assemblies/canu_flye/scaffolds.fasta',
+    'canu_flye_polished':
+        'output/045_long_read_polishing/canu_flye/canu_flye.racon.fasta',
+    'canu_flye_polished2':
+        'output/045_short_read_polishing/canu_flye/canu_flye.racon.fasta'
+}
+
 ########
 # MAIN #
 ########
@@ -126,7 +135,8 @@ rule target:
     input:
         expand('output/050_busco/run_{name}/full_table_{name}.tsv',
                name=list(assembly_catalog.keys()) +
-               list(polished_assemblies.keys()))
+               list(polished_assemblies.keys()) +
+               list(merged_assemblies.keys()))
 
 
 # general filtering rule
@@ -174,9 +184,38 @@ rule busco:
         '&> {log}'
 
 # 04 wacky genome combinations + polishing
+rule merge_subassemblies:
+    input:
+        subassemblies = [
+            'output/045_short_read_polishing/canu/canu.racon_filtered.fasta',
+            ('output/045_short_read_polishing/'
+             'flye_denovo_full/'
+             'flye_denovo_full.racon.fasta')]
+    output:
+        'output/040_merged_assemblies/canu_flye/scaffolds.fasta'
+    params:
+        outdir = 'output/040_merged_assemblies/canu_flye',
+        size = '1200m'
+    threads:
+        meraculous_threads
+    log:
+        'output/logs/040_merged_assemblies/canu_flye.log'
+    singularity:
+        flye_container
+    shell:
+        'flye '
+        '--subassemblies {input.subassemblies} '
+        '--iterations 0 '
+        '--genome-size {params.size} '
+        '--out-dir {params.outdir} '
+        '--threads {threads} '
+        '&> {log}'
+
+
 rule polish_short_reads:
     input:
-        unpack(assembly_catalog_resolver),
+        # unpack(assembly_catalog_resolver),
+        fasta = 'output/045_long_read_polishing/{name}/{name}.racon.fasta',
         aln = 'output/045_short_read_polishing/{name}/aln.sam',
         fq = 'output/000_tmp/pe_reads.fq'
     output:
@@ -226,7 +265,7 @@ rule polish_long_reads:
 
 rule map_short_reads:
     input:
-        unpack(assembly_catalog_resolver),
+        fasta = 'output/045_long_read_polishing/{name}/{name}.racon.fasta',
         fq = 'output/000_tmp/pe_reads.fq'
     output:
         'output/045_short_read_polishing/{name}/aln.sam'
