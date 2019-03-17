@@ -4,6 +4,7 @@ import os
 import pathlib2
 import tempfile
 from Bio import SeqIO
+import multiprocessing
 
 #############
 # FUNCTIONS #
@@ -17,6 +18,8 @@ def assembly_catalog_resolver(wildcards):
         return({'fasta': polished_assemblies[wildcards.name]})
     elif wildcards.name in merged_assemblies:
         return({'fasta': merged_assemblies[wildcards.name]})
+    elif wildcards.name in final_assemblies:
+        return({'fasta': final_assemblies[wildcards.name]})
     else:
         raise ValueError('missing {} in catalog'.format(wildcards.name))
 
@@ -69,6 +72,7 @@ bbduk_ref = '/phix174_ill.ref.fa.gz'
 bbduk_adaptors = '/adapters.fa'
 meraculous_config_file = 'src/meraculous_config.txt'
 meraculous_threads = 72
+dpon_ref = 'data/GCF_000355655.1_DendPond_male_1.0_genomic.fna'
 
 # containers
 kraken_container = 'shub://TomHarrop/singularity-containers:kraken_2.0.7beta'
@@ -82,6 +86,7 @@ minimap_container = 'shub://TomHarrop/singularity-containers:minimap2_2.11r797'
 racon_container = 'shub://TomHarrop/singularity-containers:racon_1.3.2'
 pigz_container = 'shub://TomHarrop/singularity-containers:pigz_2.4.0'
 bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
+quast_container = 'shub://TomHarrop/singularity-containers:quast_5.0.2'
 
 
 # assembly catalog
@@ -104,19 +109,26 @@ polished_assemblies = {
                                    'flye_denovo_full.racon.fasta'),
     'meraculous_polished': ('output/045_long_read_polishing/meraculous/'
                             'meraculous.racon.fasta'),
-    'meraculous_polished2': ('output/045_short_read_polishing/meraculous/'
-                             'meraculous.racon.fasta'),
+    # 'meraculous_polished2': ('output/045_short_read_polishing/meraculous/'
+    #                          'meraculous.racon.fasta'),
     'canu_polished': 'output/045_long_read_polishing/canu/canu.racon.fasta',
     'canu_polished2': 'output/045_short_read_polishing/canu/canu.racon.fasta'}
 
 merged_assemblies = {
     'canu_flye':
         'output/040_merged_assemblies/canu_flye/scaffolds.fasta',
-    'canu_flye_polished':
-        'output/045_long_read_polishing/canu_flye/canu_flye.racon.fasta',
-    'canu_flye_polished2':
-        'output/045_short_read_polishing/canu_flye/canu_flye.racon.fasta'
+    # 'canu_flye_polished':
+    #     'output/045_long_read_polishing/canu_flye/canu_flye.racon.fasta',
+    # 'canu_flye_polished2':
+    #     'output/045_short_read_polishing/canu_flye/canu_flye.racon.fasta'
 }
+
+final_assemblies = {
+    'flye_denovo_full_final': ('output/047_final_polish/flye_denovo_full/'
+                               'flye_denovo_full.racon.fasta'),
+    'canu_final': ('output/047_final_polish/canu/'
+                   'canu.racon.fasta')}
+
 
 ########
 # MAIN #
@@ -133,10 +145,14 @@ with open(meraculous_config_file, 'rt') as f:
 
 rule target:
     input:
+        # expand('output/050_busco/run_{name}/full_table_{name}.tsv',
+        #        name=list(assembly_catalog.keys()) +
+        #        list(polished_assemblies.keys()) +
+        #        list(merged_assemblies.keys()))
+        'output/055_quast/report.txt',
         expand('output/050_busco/run_{name}/full_table_{name}.tsv',
-               name=list(assembly_catalog.keys()) +
-               list(polished_assemblies.keys()) +
-               list(merged_assemblies.keys()))
+               name=list(final_assemblies.keys()))
+
 
 
 # general filtering rule
@@ -150,6 +166,46 @@ rule filter:
     run:
         filter_fasta_by_length(input.fa, output.fa, params.length)
 
+
+rule quast:
+    input:
+        assemblies = list(assembly_catalog.values()) +
+        list(polished_assemblies.values()) +
+        list(merged_assemblies.values()),
+        ref = dpon_ref,
+        pe = 'output/000_tmp/pe_reads.fq',
+        ont = ont_tmp
+    output:
+        'output/055_quast/report.txt'
+    log:
+        'output/logs/055_quast/quast.log'
+    params:
+        labels = ','.join(list(assembly_catalog.keys()) +
+                          list(polished_assemblies.keys()) +
+                          list(merged_assemblies.keys())),
+        outdir = 'output/055_quast'
+    threads:
+        meraculous_threads
+    singularity:
+        quast_container
+    shell:
+        'quast.py '
+        '-r {input.ref} '
+        '--threads {threads} '
+        '--labels {params.labels} '
+        '--eukaryote '
+        '--large '
+        '--k-mer-stats '
+        '--circos '
+        '--glimmer '
+        '--rna-finding '
+        '--conserved-genes-finding '    # BUSCO
+        '--fragmented '
+        '--pe12 {input.pe} '
+        '--nanopore {input.ont} '
+        '--output-dir {params.outdir} '
+        '{input.assemblies} '
+        '&> {log}'
 
 rule busco:
     input:
@@ -165,7 +221,7 @@ rule busco:
         lineage = lambda wildcards, input: resolve_path(input.lineage),
         tmpdir = tempfile.mkdtemp()
     threads:
-        meraculous_threads // 2
+        multiprocessing.cpu_count()
     priority:
         1
     singularity:
@@ -183,8 +239,66 @@ rule busco:
         '--mode genome '
         '&> {log}'
 
+
+# final polish
+rule final_polish:
+    input:
+        # unpack(assembly_catalog_resolver),
+        fasta = 'output/045_short_read_polishing/{name}/{name}.racon.fasta',
+        aln = 'output/047_final_polish/{name}/aln.sam',
+        fq = 'output/000_tmp/pe_reads.fq'
+    output:
+        'output/047_final_polish/{name}/{name}.racon.fasta'
+    log:
+        'output/logs/047_final_polish/{name}_racon.log'
+    threads:
+        multiprocessing.cpu_count()
+    priority:
+        0
+    singularity:
+        racon_container
+    shell:
+        'racon '
+        '-t {threads} '
+        '{input.fq} '
+        '{input.aln} '
+        '{input.fasta} '
+        '> {output} '
+        '2> {log}'
+
+
+rule map_final_polish:
+    input:
+        fasta = 'output/045_short_read_polishing/{name}/{name}.racon.fasta',
+        fq = 'output/000_tmp/pe_reads.fq'
+    output:
+        'output/047_final_polish/{name}/aln.sam'
+    params:
+        prefix = 'output/047_final_polish/{name}/index'
+    log:
+        'output/logs/047_final_polish/{name}_bwa-mem.log'
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        bwa_container
+    shell:
+        'bwa index '
+        '-p {params.prefix} '
+        '{input.fasta} '
+        '2> {log} '
+        '; '
+        'bwa mem '
+        '-t {threads} '
+        '-p '
+        '{params.prefix} '
+        '{input.fq} '
+        '> {output} '
+        '2>> {log}'
+
+
+
 # 04 wacky genome combinations + polishing
-rule merge_subassemblies:
+rule canu_flye:
     input:
         subassemblies = [
             'output/045_short_read_polishing/canu/canu.racon_filtered.fasta',
