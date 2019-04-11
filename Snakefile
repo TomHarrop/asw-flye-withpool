@@ -66,8 +66,8 @@ r1_raw = ['data/illumina/pe100/ASW_1.fastq.gz',
           'data/illumina/pe150/ASW_1.fastq.gz']
 r2_raw = ['data/illumina/pe100/ASW_2.fastq.gz',
           'data/illumina/pe150/ASW_2.fastq.gz']
-ont_raw = 'data/nanopore/merged_sorted.fq.gz'
-ont_tmp = 'output/000_tmp/merged_sorted.fq'
+ont_raw = 'data/guppy_237.fastq.gz'
+ont_tmp = 'output/000_tmp/guppy_237.fq'
 bbduk_ref = '/phix174_ill.ref.fa.gz'
 bbduk_adaptors = '/adapters.fa'
 meraculous_config_file = 'src/meraculous_config.txt'
