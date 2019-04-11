@@ -91,12 +91,12 @@ quast_container = 'shub://TomHarrop/singularity-containers:quast_5.0.2'
 
 # assembly catalog
 assembly_catalog = {
-    'flye_denovo': 'output/030_flye/de_novo/scaffolds.fasta',
+    # 'flye_denovo': 'output/030_flye/de_novo/scaffolds.fasta',
     'meraculous': ('output/020_meraculous/k71_diplo2/'
                    'meraculous_final_results/final.scaffolds.fa'),
     'flye_denovo_full': 'output/030_flye/denovo_full/scaffolds.fasta',
-    'flye_full_meraculous': ('output/040_merged_assemblies/'
-                             'flye_full_meraculous/scaffolds.fasta'),
+    # 'flye_full_meraculous': ('output/040_merged_assemblies/'
+    #                          'flye_full_meraculous/scaffolds.fasta'),
     'canu': 'output/035_canu/canu.contigs.fasta'
 }
 
@@ -115,8 +115,8 @@ polished_assemblies = {
     'canu_polished2': 'output/045_short_read_polishing/canu/canu.racon.fasta'}
 
 merged_assemblies = {
-    'canu_flye':
-        'output/040_merged_assemblies/canu_flye/scaffolds.fasta',
+    # 'canu_flye':
+    #     'output/040_merged_assemblies/canu_flye/scaffolds.fasta',
     # 'canu_flye_polished':
     #     'output/045_long_read_polishing/canu_flye/canu_flye.racon.fasta',
     # 'canu_flye_polished2':
@@ -145,13 +145,13 @@ with open(meraculous_config_file, 'rt') as f:
 
 rule target:
     input:
-        # expand('output/050_busco/run_{name}/full_table_{name}.tsv',
-        #        name=list(assembly_catalog.keys()) +
-        #        list(polished_assemblies.keys()) +
-        #        list(merged_assemblies.keys()))
-        'output/055_quast/report.txt',
         expand('output/050_busco/run_{name}/full_table_{name}.tsv',
-               name=list(final_assemblies.keys()))
+               name=list(assembly_catalog.keys()) +
+               list(polished_assemblies.keys()) +
+               list(final_assemblies.keys()))
+        # 'output/055_quast/report.txt',
+        # expand('output/050_busco/run_{name}/full_table_{name}.tsv',
+        #        name=list(final_assemblies.keys()))
 
 
 
@@ -311,7 +311,7 @@ rule canu_flye:
         outdir = 'output/040_merged_assemblies/canu_flye',
         size = '1200m'
     threads:
-        meraculous_threads
+        multiprocessing.cpu_count()
     log:
         'output/logs/040_merged_assemblies/canu_flye.log'
     singularity:
@@ -337,7 +337,7 @@ rule polish_short_reads:
     log:
         'output/logs/045_short_read_polishing/{name}_racon.log'
     threads:
-        meraculous_threads
+        multiprocessing.cpu_count()
     priority:
         0
     singularity:
@@ -362,7 +362,7 @@ rule polish_long_reads:
     log:
         'output/logs/045_long_read_polishing/{name}_racon.log'
     threads:
-        meraculous_threads
+        multiprocessing.cpu_count()
     priority:
         0
     singularity:
@@ -388,7 +388,7 @@ rule map_short_reads:
     log:
         'output/logs/045_short_read_polishing/{name}_bwa-mem.log'
     threads:
-        meraculous_threads // 2
+        multiprocessing.cpu_count()
     singularity:
         bwa_container
     shell:
@@ -414,7 +414,7 @@ rule map_long_reads:
     log:
         'output/logs/045_long_read_polishing/{name}_minimap.log'
     threads:
-        meraculous_threads // 2
+        multiprocessing.cpu_count()
     singularity:
         minimap_container
     shell:
@@ -440,7 +440,7 @@ rule flye_full_meraculous:
         outdir = 'output/040_merged_assemblies/flye_full_meraculous',
         size = '800m'
     threads:
-        meraculous_threads
+        multiprocessing.cpu_count()
     log:
         'output/logs/040_merged_assemblies/flye_full_meraculous.log'
     singularity:
@@ -466,7 +466,7 @@ rule canu:
         size = '800m',
         prefix = 'canu'
     threads:
-        meraculous_threads
+        multiprocessing.cpu_count()
     log:
         'output/logs/035_canu/canu.log'
     singularity:
@@ -478,7 +478,7 @@ rule canu:
         'genomeSize={params.size} '
         'corMhapSensitivity=high '
         'corMinCoverage=0 '
-        'corOutCoverage=100 '        
+        'corOutCoverage=100 '
         '-nanopore-raw {input.fq} '
         '&> {log}'
 
@@ -493,7 +493,7 @@ rule flye_denovo_full:
         outdir = 'output/030_flye/denovo_full',
         size = '800m'
     threads:
-        meraculous_threads
+        multiprocessing.cpu_count()
     log:
         'output/logs/030_flye/denovo_full.log'
     singularity:
@@ -501,7 +501,7 @@ rule flye_denovo_full:
     shell:
         'flye '
         '--iterations 1 '
-        '--resume '
+        # '--resume '
         '--nano-raw {input.fq} '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
@@ -517,7 +517,7 @@ rule flye:
         outdir = 'output/030_flye/de_novo',
         size = '800m'
     threads:
-        meraculous_threads
+        multiprocessing.cpu_count()
     log:
         'output/logs/030_flye/de_novo.log'
     singularity:
@@ -545,7 +545,7 @@ rule meraculous:
         outdir = 'output/020_meraculous/k{k}_diplo{diplo}',
         dmin = '0'
     threads:
-        min(50, meraculous_threads)
+        min(50, multiprocessing.cpu_count())
     log:
         'output/logs/020_meraculous/k{k}_diplo{diplo}.log'
     singularity:
@@ -566,7 +566,7 @@ rule meraculous_config:
     threads:
         1
     params:
-        threads = min(50, meraculous_threads),
+        threads = min(50, multiprocessing.cpu_count()),
         dmin = '0'
     run:
         write_config_file(
@@ -596,7 +596,7 @@ rule trim_decon:
         filter = bbduk_ref,
         trim = bbduk_adaptors
     threads:
-        meraculous_threads // 2
+        multiprocessing.cpu_count()
     singularity:
         bbduk_container
     shell:
