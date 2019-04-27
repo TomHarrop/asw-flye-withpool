@@ -467,6 +467,8 @@ rule canu:
         prefix = 'canu'
     threads:
         multiprocessing.cpu_count()
+    priority:
+        5
     log:
         'output/logs/035_canu/canu.log'
     singularity:
@@ -494,6 +496,8 @@ rule flye_denovo_full:
         size = '800m'
     threads:
         multiprocessing.cpu_count()
+    priority:
+        10
     log:
         'output/logs/030_flye/denovo_full.log'
     singularity:
