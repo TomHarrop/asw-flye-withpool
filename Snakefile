@@ -87,7 +87,7 @@ racon_container = 'shub://TomHarrop/singularity-containers:racon_1.3.2'
 pigz_container = 'shub://TomHarrop/singularity-containers:pigz_2.4.0'
 bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
 quast_container = 'shub://TomHarrop/singularity-containers:quast_5.0.2'
-
+racon_chunks = 'shub://TomHarrop/singularity-containers:racon-chunks_0.0.4'
 
 # assembly catalog
 assembly_catalog = {
@@ -243,59 +243,31 @@ rule busco:
 # final polish
 rule final_polish:
     input:
-        # unpack(assembly_catalog_resolver),
         fasta = 'output/045_short_read_polishing/{name}/{name}.racon.fasta',
-        aln = 'output/047_final_polish/{name}/aln.sam',
         fq = 'output/000_tmp/pe_reads.fq'
     output:
         'output/047_final_polish/{name}/{name}.racon.fasta'
+    params:
+        outdir = 'output/047_final_polish/{name}',
+        out_name = '{name}.racon.fasta',
+        chunks = 2000
     log:
         'output/logs/047_final_polish/{name}_racon.log'
     threads:
         multiprocessing.cpu_count()
     priority:
-        0
+        100
     singularity:
-        racon_container
+        racon_chunks
     shell:
-        'racon '
-        '-t {threads} '
-        '{input.fq} '
-        '{input.aln} '
-        '{input.fasta} '
-        '> {output} '
+        'racon_chunks '
+        '--reads {input.fq} '
+        '--assembly {input.fasta} '
+        '--outdir {params.outdir} '
+        '--output_filename {params.out_name} '
+        '--threads {threads} '
+        '--chunks {params.chunks} '
         '2> {log}'
-
-
-rule map_final_polish:
-    input:
-        fasta = 'output/045_short_read_polishing/{name}/{name}.racon.fasta',
-        fq = 'output/000_tmp/pe_reads.fq'
-    output:
-        'output/047_final_polish/{name}/aln.sam'
-    params:
-        prefix = 'output/047_final_polish/{name}/index'
-    log:
-        'output/logs/047_final_polish/{name}_bwa-mem.log'
-    threads:
-        multiprocessing.cpu_count()
-    singularity:
-        bwa_container
-    shell:
-        'bwa index '
-        '-p {params.prefix} '
-        '{input.fasta} '
-        '2> {log} '
-        '; '
-        'bwa mem '
-        '-t {threads} '
-        '-p '
-        '{params.prefix} '
-        '{input.fq} '
-        '> {output} '
-        '2>> {log}'
-
-
 
 # 04 wacky genome combinations + polishing
 rule canu_flye:
@@ -328,12 +300,14 @@ rule canu_flye:
 
 rule polish_short_reads:
     input:
-        # unpack(assembly_catalog_resolver),
         fasta = 'output/045_long_read_polishing/{name}/{name}.racon.fasta',
-        aln = 'output/045_short_read_polishing/{name}/aln.sam',
         fq = 'output/000_tmp/pe_reads.fq'
     output:
         'output/045_short_read_polishing/{name}/{name}.racon.fasta'
+    params:
+        outdir = 'output/045_short_read_polishing/{name}',
+        out_name = '{name}.racon.fasta',
+        chunks = 2000
     log:
         'output/logs/045_short_read_polishing/{name}_racon.log'
     threads:
@@ -341,16 +315,16 @@ rule polish_short_reads:
     priority:
         0
     singularity:
-        racon_container
+        racon_chunks
     shell:
-        'racon '
-        '-t {threads} '
-        '{input.fq} '
-        '{input.aln} '
-        '{input.fasta} '
-        '> {output} '
+        'racon_chunks '
+        '--reads {input.fq} '
+        '--assembly {input.fasta} '
+        '--outdir {params.outdir} '
+        '--output_filename {params.out_name} '
+        '--threads {threads} '
+        '--chunks {params.chunks} '
         '2> {log}'
-
 
 rule polish_long_reads:
     input:
@@ -376,34 +350,6 @@ rule polish_long_reads:
         '> {output} '
         '2> {log}'
 
-
-rule map_short_reads:
-    input:
-        fasta = 'output/045_long_read_polishing/{name}/{name}.racon.fasta',
-        fq = 'output/000_tmp/pe_reads.fq'
-    output:
-        'output/045_short_read_polishing/{name}/aln.sam'
-    params:
-        prefix = 'output/045_short_read_polishing/{name}/index'
-    log:
-        'output/logs/045_short_read_polishing/{name}_bwa-mem.log'
-    threads:
-        multiprocessing.cpu_count()
-    singularity:
-        bwa_container
-    shell:
-        'bwa index '
-        '-p {params.prefix} '
-        '{input.fasta} '
-        '2> {log} '
-        '; '
-        'bwa mem '
-        '-t {threads} '
-        '-p '
-        '{params.prefix} '
-        '{input.fq} '
-        '> {output} '
-        '2>> {log}'
 
 rule map_long_reads:
     input:
