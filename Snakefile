@@ -88,6 +88,7 @@ pigz_container = 'shub://TomHarrop/singularity-containers:pigz_2.4.0'
 bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
 quast_container = 'shub://TomHarrop/singularity-containers:quast_5.0.2'
 racon_chunks = 'shub://TomHarrop/singularity-containers:racon-chunks_0.0.4'
+agb_container = 'shub://TomHarrop/assembly-utils:agb_9c1b39c'
 
 # assembly catalog
 assembly_catalog = {
@@ -166,6 +167,25 @@ rule filter:
     run:
         filter_fasta_by_length(input.fa, output.fa, params.length)
 
+
+rule agb:
+    input:
+        'output/030_flye/denovo_full/scaffolds.fasta'
+    output:
+        'output/060_abg/viewer.html'
+    log:
+        'output/logs/060_abg.log'
+    params:
+        wd = 'output/030_flye/denovo_full',
+        outdir = 'output/060_abg'
+    singularity:
+        agb_container
+    shell:
+        'agb.py '
+        '-i {params.wd} '
+        '-a flye '
+        '-o {params.outdir} '
+        '&> {log}'
 
 rule quast:
     input:
