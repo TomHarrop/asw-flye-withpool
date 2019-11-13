@@ -88,7 +88,7 @@ pigz_container = 'shub://TomHarrop/singularity-containers:pigz_2.4.0'
 bwa_container = 'shub://TomHarrop/singularity-containers:bwa_0.7.17'
 quast_container = 'shub://TomHarrop/singularity-containers:quast_5.0.2'
 racon_chunks = 'shub://TomHarrop/singularity-containers:racon-chunks_0.0.4'
-agb_container = 'shub://TomHarrop/assembly-utils:agb_a92723d'
+agb_container = 'shub://TomHarrop/assembly-utils:agb_9c1b39c'
 
 # assembly catalog
 assembly_catalog = {
@@ -181,6 +181,7 @@ rule agb:
     singularity:
         agb_container
     shell:
+        'export PYTHONIOENCODING=utf8; '
         'agb.py '
         '-i {params.wd} '
         '-a flye '
