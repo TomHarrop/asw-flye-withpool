@@ -81,7 +81,7 @@ rule flye_assemble:
     shell:
         'flye '
         '--iterations 0 '
-        '--nano-raw <(cat {input}) '
+        '--nano-raw {input} '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
         '--threads {threads} '
