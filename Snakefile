@@ -71,7 +71,7 @@ rule flye_assemble:
         'output/020_flye-assemble/assembly.fasta'
     params:
         outdir = 'output/020_flye_assemble',
-        size = '1200m'
+        size = '1.2g'
     threads:
         multiprocessing.cpu_count()
     log:
@@ -81,7 +81,7 @@ rule flye_assemble:
     shell:
         'flye '
         '--iterations 0 '
-        '--nano-raw {input} '
+        '--nano-raw {input}  '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
         '--threads {threads} '
