@@ -24,9 +24,7 @@ porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 
 rule target:
     input:
-        'output/010_flye-assemble/scaffolds.fasta'
-
-
+        'output/020_flye-assemble/scaffolds.fasta'
 
 # rule busco:
 #     input:
@@ -70,14 +68,14 @@ rule flye_assemble:
         pool = 'output/010_raw/pool.fq',
         asw47 = 'output/010_raw/asw47.fq'
     output:
-        'output/010_flye-assemble/scaffolds.fasta'
+        'output/020_flye-assemble/scaffolds.fasta'
     params:
-        outdir = 'output/010_flye_assemble',
+        outdir = 'output/020_flye_assemble',
         size = '1200m'
     threads:
         multiprocessing.cpu_count()
     log:
-        'output/logs/010_flye-assemble.log'
+        'output/logs/020_flye-assemble.log'
     singularity:
         flye
     shell:
