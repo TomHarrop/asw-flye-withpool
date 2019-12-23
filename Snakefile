@@ -96,7 +96,7 @@ rule remove_ont_adaptors:
     log:
         'output/logs/remove_ont_adaptors.{group}.log'
     threads:
-        multiprocessing.cpu_count()
+        multiprocessing.cpu_count() // 2
     singularity:
         porechop
     shell:
