@@ -73,9 +73,9 @@ rule flye_assemble:
         outdir = 'output/020_flye_assemble',
         size = '1.2g'
     threads:
-        max(128, multiprocessing.cpu_count())
+        min(128, multiprocessing.cpu_count())
     log:
-        'output/logs/020_flye-assemble.log'
+        'output/logs/flye_assemble.log'
     singularity:
         flye
     shell:
