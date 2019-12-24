@@ -70,7 +70,7 @@ rule flye_assemble:
     output:
         'output/020_flye-assemble/assembly.fasta'
     params:
-        outdir = 'output/020_flye_assemble',
+        outdir = 'output/020_flye-assemble',
         size = '1.2g'
     threads:
         min(128, multiprocessing.cpu_count())
