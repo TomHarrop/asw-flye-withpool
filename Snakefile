@@ -73,15 +73,15 @@ rule flye_assemble:
         outdir = 'output/020_flye_assemble',
         size = '1.2g'
     threads:
-        multiprocessing.cpu_count()
+        max(128, multiprocessing.cpu_count())
     log:
         'output/logs/020_flye-assemble.log'
     singularity:
         flye
     shell:
         'flye '
-        '--iterations 0 '
         '--nano-raw {input}  '
+        '--iterations 0 '
         '--genome-size {params.size} '
         '--out-dir {params.outdir} '
         '--threads {threads} '
