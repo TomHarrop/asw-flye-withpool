@@ -15,7 +15,7 @@ pool_raw = 'data/ont-reads/pool.fq.gz'
 asw47_raw = 'data/ont-reads/asw47.fq.gz'
 
 # containers
-flye = 'shub://TomHarrop/assemblers:flye_2.6'
+flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 
 #########
