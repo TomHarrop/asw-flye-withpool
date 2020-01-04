@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
+from pathlib import Path
 import multiprocessing
+import tempfile
 
 #############
 # FUNCTIONS #
 #############
 
+def busco_target_resolver(wildcards):
+    return {'fasta': busco_targets[wildcards.assembly]}
+
+
+def resolve_path(path):
+    return str(Path(path).resolve())
 
 ###########
 # GLOBALS #
@@ -19,6 +27,14 @@ flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
 # flye = 'shub://TomHarrop/assemblers:flye_2.6'
 # flye = 'shub://TomHarrop/singularity-containers:flye_2.5'
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
+busco = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
+
+# busco jobs
+busco_targets = {
+    'flye_polish': 'output/025_flye-polish/assembly.fasta',
+    'flye_assemble': 'output/020_flye-assemble/assembly.fasta'
+}
+
 
 #########
 # RULES #
@@ -26,46 +42,41 @@ porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 
 rule target:
     input:
-        'output/025_flye-polish/assembly.fasta'
+        expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
+               assembly=list(busco_targets.keys()))
 
-# rule busco:
-#     input:
-#         unpack(assembly_catalog_resolver),
-#         lineage = 'data/busco/endopterygota_odb9'
-#     output:
-#         'output/050_busco/run_{name}/full_table_{name}.tsv'
-#     log:
-#         resolve_path('output/logs/050_busco/busco_{name}.log')
-#     params:
-#         wd = 'output/050_busco',
-#         fasta = lambda wildcards, input: resolve_path(input.fasta),
-#         lineage = lambda wildcards, input: resolve_path(input.lineage),
-#         tmpdir = tempfile.mkdtemp()
-#     threads:
-#         multiprocessing.cpu_count()
-#     priority:
-#         1
-#     singularity:
-#         busco_container
-#     shell:
-#         'cd {params.wd} || exit 1 ; '
-#         'run_BUSCO.py '
-#         '--force '
-#         '--tmp_path {params.tmpdir} '
-#         '--in {params.fasta} '
-#         '--out {wildcards.name} '
-#         '--lineage {params.lineage} '
-#         '--cpu {threads} '
-#         '--species tribolium2012 '
-#         '--mode genome '
-#         '&> {log}'
+# busco
+rule busco:
+    input:
+        unpack(busco_target_resolver),
+        lineage = 'data/busco/endopterygota_odb9'
+    output:
+        'output/099_busco/run_{assembly}/full_table_{assembly}.tsv'
+    log:
+        resolve_path('output/logs/busco.{assembly}.log')
+    params:
+        wd = 'output/099_busco',
+        fasta = lambda wildcards, input: resolve_path(input.fasta),
+        lineage = lambda wildcards, input: resolve_path(input.lineage),
+        tmpdir = tempfile.mkdtemp()
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        busco
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'run_BUSCO.py '
+        '--force '
+        '--tmp_path {params.tmpdir} '
+        '--in {params.fasta} '
+        '--out {wildcards.assembly} '
+        '--lineage {params.lineage} '
+        '--cpu {threads} '
+        '--species tribolium2012 '
+        '--mode genome '
+        '&> {log}'
 
-
-# to polish this:
-# https://github.com/fenderglass/Flye/issues/98
-
-
-# 03 flye
+# 02 flye
 rule flye_polish:
     input:
         assembly = 'output/020_flye-assemble/assembly.fasta',
