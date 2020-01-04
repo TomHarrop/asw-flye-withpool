@@ -83,7 +83,7 @@ rule flye_polish:
     singularity:
         flye
     shell:
-        'cp -r {params.indir} output/ ; '
+        'cp -r {params.indir}/* {params.outdir} ; '
         'flye '
         '--nano-raw {input.asw47}  '
         '--resume-from polishing '
