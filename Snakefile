@@ -26,7 +26,7 @@ porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 
 rule target:
     input:
-        'output/020_flye-assemble/assembly.fasta'
+        'output/025_flye-polish/assembly.fasta'
 
 # rule busco:
 #     input:
@@ -64,7 +64,46 @@ rule target:
 # to polish this:
 # https://github.com/fenderglass/Flye/issues/98
 
+
 # 03 flye
+rule flye_polish:
+    input:
+        assembly = 'output/025_flye-polish',
+        asw47 = 'output/010_raw/asw47.fq'
+    output:
+        'output/025_flye-polish/assembly.fasta'
+    params:
+        outdir = 'output/025_flye-polish',
+        size = '1.2g'
+    threads:
+        min(128, multiprocessing.cpu_count())
+    log:
+        'output/logs/flye_polish.log'
+    singularity:
+        flye
+    shell:
+        'flye '
+        '--nano-raw {input.asw47}  '
+        '--resume-from polishing '
+        '--genome-size {params.size} '
+        '--out-dir {params.outdir} '
+        '--threads {threads} '
+        '&> {log}'
+
+
+rule flye_duplicate_assembly:
+    input:
+        'output/020_flye-assemble/assembly.fasta'
+    output:
+        directory('output/025_flye-polish')
+    params:
+        wd = 'output/020_flye-assemble'
+    singularity:
+        flye
+    shell:
+        'cp -r {params.wd} {output}'
+
+
 rule flye_assemble:
     input:
         pool = 'output/010_raw/pool.fq',
