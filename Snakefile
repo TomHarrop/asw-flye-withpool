@@ -16,6 +16,8 @@ asw47_raw = 'data/ont-reads/asw47.fq.gz'
 
 # containers
 flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
+# flye = 'shub://TomHarrop/assemblers:flye_2.6'
+# flye = 'shub://TomHarrop/singularity-containers:flye_2.5'
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 
 #########
