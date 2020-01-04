@@ -60,7 +60,7 @@ rule busco:
         lineage = lambda wildcards, input: resolve_path(input.lineage),
         tmpdir = tempfile.mkdtemp()
     threads:
-        multiprocessing.cpu_count()
+        multiprocessing.cpu_count() // 2
     singularity:
         busco
     shell:
