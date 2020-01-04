@@ -68,11 +68,12 @@ rule target:
 # 03 flye
 rule flye_polish:
     input:
-        assembly = 'output/025_flye-polish',
+        assembly = 'output/020_flye-assemble/assembly.fasta',
         asw47 = 'output/010_raw/asw47.fq'
     output:
         'output/025_flye-polish/assembly.fasta'
     params:
+        indir = 'output/020_flye-assemble',
         outdir = 'output/025_flye-polish',
         size = '1.2g'
     threads:
@@ -82,6 +83,7 @@ rule flye_polish:
     singularity:
         flye
     shell:
+        'cp -r {params.indir} {params.outdir} ; '
         'flye '
         '--nano-raw {input.asw47}  '
         '--resume-from polishing '
@@ -89,19 +91,6 @@ rule flye_polish:
         '--out-dir {params.outdir} '
         '--threads {threads} '
         '&> {log}'
-
-
-rule flye_duplicate_assembly:
-    input:
-        'output/020_flye-assemble/assembly.fasta'
-    output:
-        directory('output/025_flye-polish')
-    params:
-        wd = 'output/020_flye-assemble'
-    singularity:
-        flye
-    shell:
-        'cp -r {params.wd} {output}'
 
 
 rule flye_assemble:
