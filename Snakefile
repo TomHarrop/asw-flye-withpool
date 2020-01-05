@@ -32,7 +32,8 @@ busco = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 # busco jobs
 busco_targets = {
     'flye_polish': 'output/025_flye-polish/assembly.fasta',
-    'flye_assemble': 'output/020_flye-assemble/assembly.fasta'
+    'flye_assemble': 'output/020_flye-assemble/assembly.fasta',
+    'flye_asw47': 'output/027_flye-asw47/assembly.fasta'
 }
 
 
@@ -127,6 +128,29 @@ rule flye_assemble:
         '--out-dir {params.outdir} '
         '--threads {threads} '
         '&> {log}'
+
+rule flye_asw47:
+    input:
+        asw47 = 'output/010_raw/asw47.fq'
+    output:
+        'output/027_flye-asw47/assembly.fasta'
+    params:
+        outdir = 'output/027_flye-asw47',
+        size = '1.2g'
+    threads:
+        min(128, multiprocessing.cpu_count())
+    log:
+        'output/logs/flye_asw47.log'
+    singularity:
+        flye
+    shell:
+        'flye '
+        '--nano-raw {input}  '
+        '--genome-size {params.size} '
+        '--out-dir {params.outdir} '
+        '--threads {threads} '
+        '&> {log}'
+
 
 # porechop
 rule remove_ont_adaptors:
