@@ -89,10 +89,8 @@ rule haplotigs_hist:
         'output/030_purge-haplotigs/histogram.png'
     params:
         wd = 'output/030_purge-haplotigs',
-        assembly = labmda wildcards, input:
-            resolve_path(input.assembly),
-        bam = labmda wildcards, input:
-            resolve_path(input.bam),
+        assembly = lambda wildcards, input: resolve_path(input.assembly),
+        bam = lambda wildcards, input: resolve_path(input.bam)
     log:
         resolve_path('output/logs/haplotigs_hist.log')
     threads:
