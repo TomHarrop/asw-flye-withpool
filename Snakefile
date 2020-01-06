@@ -4,6 +4,7 @@ from pathlib import Path
 import multiprocessing
 import tempfile
 
+
 #############
 # FUNCTIONS #
 #############
@@ -15,6 +16,7 @@ def busco_target_resolver(wildcards):
 def resolve_path(path):
     return str(Path(path).resolve())
 
+
 ###########
 # GLOBALS #
 ###########
@@ -23,11 +25,10 @@ pool_raw = 'data/ont-reads/pool.fq.gz'
 asw47_raw = 'data/ont-reads/asw47.fq.gz'
 
 # containers
-flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
-# flye = 'shub://TomHarrop/assemblers:flye_2.6'
-# flye = 'shub://TomHarrop/singularity-containers:flye_2.5'
-porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 busco = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
+flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
+porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
+purge_haplotigs = 'shub://TomHarrop/assembly-utils:purge_haplotigs_0b9afdf'
 
 # busco jobs
 busco_targets = {
@@ -44,7 +45,8 @@ busco_targets = {
 rule target:
     input:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
-               assembly=list(busco_targets.keys()))
+               assembly=list(busco_targets.keys())),
+        'output/030_purge-haplotigs/histogram.png'
 
 # busco
 rule busco:
@@ -76,6 +78,83 @@ rule busco:
         '--species tribolium2012 '
         '--mode genome '
         '&> {log}'
+
+# 03 purge haplotigs
+rule haplotigs_hist:
+    input:
+        assembly = 'output/030_purge-haplotigs/ref.fasta',
+        fai = 'output/030_purge-haplotigs/ref.fasta.fai',
+        bam = 'output/030_purge-haplotigs/aligned.bam'
+    output:
+        'output/030_purge-haplotigs/histogram.png'
+    params:
+        wd = 'output/030_purge-haplotigs',
+        assembly = labmda wildcards, input:
+            resolve_path(input.assembly),
+        bam = labmda wildcards, input:
+            resolve_path(input.bam),
+    log:
+        resolve_path('output/logs/haplotigs_hist.log')
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        purge_haplotigs
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'purge_haplotigs '
+        '-b {params.bam} '
+        '-g {params.assembly} '
+        '-t {threads} '
+        '&> {log}'
+
+
+rule haplotigs_sort:
+    input:
+        'output/030_purge-haplotigs/aligned.sam'
+    output:
+        'output/030_purge-haplotigs/aligned.bam'
+    log:
+        'output/logs/haplotigs_sort.log'
+    singularity:
+        purge_haplotigs
+    shell:
+        'samtools sort -o {output} {input} ; '
+        'samtools index {output}'
+
+rule haplotigs_map:
+    input:
+        assembly = 'output/030_purge-haplotigs/ref.fasta',
+        short_reads = 'data/short_reads.fastq'
+    output:
+        pipe = pipe('output/030_purge-haplotigs/aligned.sam')
+    log:
+        'output/logs/haplotigs_map.log'
+    threads:
+        multiprocessing.cpu_count() - 1
+    singularity:
+        purge_haplotigs
+    shell:
+        'minimap2 '
+        '-t {threads} '
+        '-ax sr '
+        '--secondary=no '
+        '{input.assembly} '
+        '{input.short_reads} '
+        '>> {output.pipe} '
+        '2> {log}'
+
+rule haplotigs_ref:
+    input:
+        'output/025_flye-polish/assembly.fasta'
+    output:
+        fa = 'output/030_purge-haplotigs/ref.fasta',
+        fai = 'output/030_purge-haplotigs/ref.fasta.fai'
+    singularity:
+        purge_haplotigs
+    shell:
+        'cp {input} {output.fa} '
+        '; '
+        'samtools faidx {output.fa}'
 
 # 02 flye
 rule flye_polish:
