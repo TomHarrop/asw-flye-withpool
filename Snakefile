@@ -69,7 +69,7 @@ rule busco:
         lineage = lambda wildcards, input: resolve_path(input.lineage),
         tmpdir = tempfile.mkdtemp()
     threads:
-        multiprocessing.cpu_count() // 2
+        psutil.cpu_count() // 2
     singularity:
         busco
     shell:
@@ -100,7 +100,7 @@ rule haplotigs_hist:
     log:
         resolve_path('output/logs/haplotigs_hist.log')
     threads:
-        multiprocessing.cpu_count()
+        psutil.cpu_count()
     singularity:
         purge_haplotigs
     shell:
@@ -137,7 +137,7 @@ rule haplotigs_map:
     log:
         'output/logs/haplotigs_map.log'
     threads:
-        multiprocessing.cpu_count() - 1
+        psutil.cpu_count() - 1
     singularity:
         purge_haplotigs
     shell:
@@ -175,7 +175,7 @@ rule flye_polish:
         outdir = 'output/025_flye-polish',
         size = '1.2g'
     threads:
-        min(128, multiprocessing.cpu_count())
+        min(128, psutil.cpu_count())
     log:
         'output/logs/flye_polish.log'
     singularity:
@@ -201,7 +201,7 @@ rule flye_assemble:
         outdir = 'output/020_flye-assemble',
         size = '1.2g'
     threads:
-        min(128, multiprocessing.cpu_count())
+        min(128, psutil.cpu_count())
     log:
         'output/logs/flye_assemble.log'
     singularity:
@@ -224,7 +224,7 @@ rule flye_asw47:
         outdir = 'output/027_flye-asw47',
         size = '1.2g'
     threads:
-        min(128, multiprocessing.cpu_count())
+        min(128, psutil.cpu_count())
     log:
         'output/logs/flye_asw47.log'
     singularity:
@@ -247,7 +247,7 @@ rule remove_ont_adaptors:
     log:
         'output/logs/remove_ont_adaptors.{group}.log'
     threads:
-        multiprocessing.cpu_count() // 2
+        psutil.cpu_count() // 2
     singularity:
         porechop
     shell:
