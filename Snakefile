@@ -134,6 +134,8 @@ rule haplotigs_map:
         short_reads = 'data/short_reads.fastq'
     output:
         pipe = pipe('output/030_purge-haplotigs/aligned.sam')
+    params:
+        threads = psutil.cpu_count()
     log:
         'output/logs/haplotigs_map.log'
     threads:
@@ -142,7 +144,7 @@ rule haplotigs_map:
         purge_haplotigs
     shell:
         'minimap2 '
-        '-t {threads + 1} '
+        '-t {params.threads} '
         '-ax sr '
         '--secondary=no '
         '{input.assembly} '
