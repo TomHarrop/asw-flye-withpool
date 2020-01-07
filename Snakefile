@@ -52,7 +52,7 @@ rule target:
     input:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
                assembly=list(busco_targets.keys())),
-        'output/030_purge-haplotigs/coverage_stats.csv'
+        'output/030_purge-haplotigs/curated.fasta'
 
 # busco
 rule busco:
@@ -86,6 +86,34 @@ rule busco:
         '&> {log}'
 
 # 03 purge haplotigs
+rule haplotigs_purge:
+    input:
+        assembly = 'output/030_purge-haplotigs/ref.fasta',
+        covstats = 'output/030_purge-haplotigs/coverage_stats.csv',
+        bam = 'output/030_purge-haplotigs/aligned.bam'
+    output:
+        'output/030_purge-haplotigs/curated.fasta'
+    params:
+        wd = 'output/030_purge-haplotigs',
+        assembly = lambda wildcards, input: resolve_path(input.assembly),
+        covstats = lambda wildcards, input: resolve_path(input.covstats),
+        bam = lambda wildcards, input: resolve_path(input.bam)
+    log:
+        resolve_path('output/logs/haplotigs_purge.log')
+    threads:
+        cpus
+    singularity:
+        purge_haplotigs
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'purge_haplotigs purge '
+        '-g {params.assembly} '
+        '-c {params.covstats} '
+        '-b {params.bam} '
+        '-t {threads} '
+        '-d '
+        '&> {log1}'
+
 rule haplotigs_cov:
     input:
         genecov = 'output/030_purge-haplotigs/aligned.bam.gencov'
