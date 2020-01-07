@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import multiprocessing
+import psutil
 import tempfile
-
 
 #############
 # FUNCTIONS #
@@ -29,6 +28,13 @@ busco = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 purge_haplotigs = 'shub://TomHarrop/assembly-utils:purge_haplotigs_0b9afdf'
+
+# resources
+cpus = psutil.cpu_count()
+mem = psutil.virtual_memory().total
+fraction_to_use = 0.75
+gb_mem_per_thread = round((mem * fraction_to_use) / cpus
+                          / (1024 * 1024 * 1024))
 
 # busco jobs
 busco_targets = {
@@ -116,7 +122,10 @@ rule haplotigs_sort:
     singularity:
         purge_haplotigs
     shell:
-        'samtools sort -o {output} {input} ; '
+        'samtools sort '
+        '-m {gb_mem_per_thread}G '
+        '-o {output} {input} '
+        '-@ {cpus} ; '
         'samtools index {output}'
 
 rule haplotigs_map:
