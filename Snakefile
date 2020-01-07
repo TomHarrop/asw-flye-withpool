@@ -40,7 +40,8 @@ gb_mem_per_thread = round((mem * fraction_to_use) / cpus
 busco_targets = {
     'flye_polish': 'output/025_flye-polish/assembly.fasta',
     'flye_assemble': 'output/020_flye-assemble/assembly.fasta',
-    'flye_asw47': 'output/027_flye-asw47/assembly.fasta'
+    'flye_asw47': 'output/027_flye-asw47/assembly.fasta',
+    'purge_haplotigs': 'output/030_purge-haplotigs/curated.fasta'
 }
 
 
@@ -51,9 +52,7 @@ busco_targets = {
 rule target:
     input:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
-               assembly=list(busco_targets.keys())),
-        'output/030_purge-haplotigs/curated.fasta'
-
+               assembly=list(busco_targets.keys()))
 # busco
 rule busco:
     input:
@@ -112,7 +111,7 @@ rule haplotigs_purge:
         '-b {params.bam} '
         '-t {threads} '
         '-d '
-        '&> {log1}'
+        '&> {log}'
 
 rule haplotigs_cov:
     input:
