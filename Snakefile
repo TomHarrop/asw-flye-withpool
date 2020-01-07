@@ -105,7 +105,7 @@ rule haplotigs_hist:
         purge_haplotigs
     shell:
         'cd {params.wd} || exit 1 ; '
-        'purge_haplotigs '
+        'purge_haplotigs hist '
         '-b {params.bam} '
         '-g {params.assembly} '
         '-t {threads} '
