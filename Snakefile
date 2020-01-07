@@ -52,7 +52,7 @@ rule target:
     input:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
                assembly=list(busco_targets.keys())),
-        'output/030_purge-haplotigs/histogram.png'
+        'output/030_purge-haplotigs/coverage_stats.csv'
 
 # busco
 rule busco:
@@ -86,13 +86,33 @@ rule busco:
         '&> {log}'
 
 # 03 purge haplotigs
+rule haplotigs_cov:
+    input:
+        genecov = 'output/030_purge-haplotigs/aligned.bam.gencov'
+    output:
+        'output/030_purge-haplotigs/coverage_stats.csv'
+    params:
+        wd = 'output/030_purge-haplotigs',
+        genecov = lambda wildcards, input: resolve_path(input.genecov)
+    log:
+        resolve_path('output/logs/haplotigs_cov.log')
+    singularity:
+        purge_haplotigs
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'purge_haplotigs cov '
+        '-i {params.genecov} '
+        '-l 60 -m 120 -h 190 '
+        '&> {log}'
+
 rule haplotigs_hist:
     input:
         assembly = 'output/030_purge-haplotigs/ref.fasta',
         fai = 'output/030_purge-haplotigs/ref.fasta.fai',
         bam = 'output/030_purge-haplotigs/aligned.bam'
     output:
-        'output/030_purge-haplotigs/histogram.png'
+        'output/030_purge-haplotigs/aligned.bam.histogram.png',
+        'output/030_purge-haplotigs/aligned.bam.gencov'
     params:
         wd = 'output/030_purge-haplotigs',
         assembly = lambda wildcards, input: resolve_path(input.assembly),
