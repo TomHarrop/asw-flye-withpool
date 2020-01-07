@@ -142,7 +142,7 @@ rule haplotigs_map:
         purge_haplotigs
     shell:
         'minimap2 '
-        '-t {threads} '
+        '-t {threads + 1} '
         '-ax sr '
         '--secondary=no '
         '{input.assembly} '
