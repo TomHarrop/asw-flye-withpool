@@ -14,7 +14,7 @@ def busco_target_resolver(wildcards):
 
 
 def racon_chunk_resolver(wildcards):
-    retun busco_targets[wildcards.assembly]
+    return busco_targets[wildcards.assembly]
 
 
 def resolve_path(path):
