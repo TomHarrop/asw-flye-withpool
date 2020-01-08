@@ -33,6 +33,7 @@ busco = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 purge_haplotigs = 'shub://TomHarrop/assembly-utils:purge_haplotigs_0b9afdf'
+racon_chunks = 'shub://TomHarrop/racon-chunks:racon-chunks_0.0.6'
 
 # resources
 cpus = psutil.cpu_count()
