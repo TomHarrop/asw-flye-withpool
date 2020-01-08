@@ -4,12 +4,17 @@ from pathlib import Path
 import psutil
 import tempfile
 
+
 #############
 # FUNCTIONS #
 #############
 
 def busco_target_resolver(wildcards):
     return {'fasta': busco_targets[wildcards.assembly]}
+
+
+def racon_chunk_resolver(wildcards):
+    retun busco_targets[wildcards.assembly]
 
 
 def resolve_path(path):
@@ -38,10 +43,18 @@ gb_mem_per_thread = round((mem * fraction_to_use) / cpus
 
 # busco jobs
 busco_targets = {
-    'flye_polish': 'output/025_flye-polish/assembly.fasta',
-    'flye_assemble': 'output/020_flye-assemble/assembly.fasta',
-    'flye_asw47': 'output/027_flye-asw47/assembly.fasta',
-    'purge_haplotigs': 'output/030_purge-haplotigs/curated.fasta'
+    'flye_polish':
+        'output/025_flye-polish/assembly.fasta',
+    'flye_assemble':
+        'output/020_flye-assemble/assembly.fasta',
+    'flye_asw47':
+        'output/027_flye-asw47/assembly.fasta',
+    'purge_haplotigs':
+        'output/030_purge-haplotigs/curated.fasta',
+    'asw47_polished':
+        'output/040_racon-illumina/flye_asw47/racon.fasta',
+    'purge_haplotigs_polished':
+        'output/040_racon-illumina/purge_haplotigs/racon.fasta'
 }
 
 
@@ -82,6 +95,35 @@ rule busco:
         '--cpu {threads} '
         '--species tribolium2012 '
         '--mode genome '
+        '&> {log}'
+
+
+# 04 polish with illumina reads (racon_chunks)
+rule racon_illumina:
+    input:
+        fa = racon_chunk_resolver
+        short_reads = 'data/short_reads.fastq'
+    output:
+        'output/040_racon-illumina/{assembly}/racon.fasta'
+    params:
+        outdir = 'output/040_racon-illumina/{assembly}',
+        output_filename = 'racon.fasta',
+        chunks = '1000'
+    log:
+        'output/logs/racon_chunks.{assembly}.log'
+    threads:
+        cpus
+    singularity:
+        racon_chunks
+    shell:
+        'racon_chunks '
+        '--reads {input.short_reads} '
+        '--assembly {input.fa} '
+        '--outdir {params.outdir} '
+        '--output_filename {params.output_filename} '
+        '--threads {threads} '
+        '--chunks {params.chunks} '
+        '--wait_min 120 '
         '&> {log}'
 
 # 03 purge haplotigs
