@@ -102,7 +102,7 @@ rule busco:
 # 04 polish with illumina reads (racon_chunks)
 rule racon_illumina:
     input:
-        fa = racon_chunk_resolver
+        fa = racon_chunk_resolver,
         short_reads = 'data/short_reads.fastq'
     output:
         'output/040_racon-illumina/{assembly}/racon.fasta'
