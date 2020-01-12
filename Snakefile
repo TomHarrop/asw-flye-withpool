@@ -124,7 +124,8 @@ rule racon_illumina:
         '--output_filename {params.output_filename} '
         '--threads {threads} '
         '--chunks {params.chunks} '
-        '--wait_min 120 '
+        '--wait_min 180 '
+        '--restart_times 2 '
         '&> {log}'
 
 # 03 purge haplotigs
