@@ -61,7 +61,6 @@ busco_targets = {
         'output/040_racon-illumina/purge_haplotigs/racon.fasta'
 }
 
-
 #########
 # RULES #
 #########
@@ -86,15 +85,13 @@ rule rm_mask:
         fasta = lambda wildcards, input: resolve_path(input.fasta)
     log:
         resolve_path('output/logs/rm_mask.{assembly}.log')
-    threads:
-        psutil.cpu_count()
     singularity:
         te_tools
     shell:
         'cd {params.wd} || exit 1 ; '
         'RepeatMasker '
         '-engine ncbi '
-        '-pa {threads} '
+        '-pa {cpus} '
         '-lib {params.lib} '
         '-dir {params.wd} '
         '-gccalc -xsmall -gff -html '
@@ -111,8 +108,6 @@ rule rm_model:
         wd = resolve_path('output/095_repeatmasker/{assembly}'),
     log:
         resolve_path('output/logs/rm_model.{assembly}.log')
-    threads:
-        psutil.cpu_count()
     singularity:
         te_tools
     shell:
@@ -120,7 +115,7 @@ rule rm_model:
         'RepeatModeler '
         '-database {wildcards.assembly} '
         '-engine ncbi '
-        '-pa {threads} '
+        '-pa {cpus} '
         '-dir {params.wd} '
         # '-recoverDir {params.wd} '
         '&> {log}'
