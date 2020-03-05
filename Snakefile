@@ -87,7 +87,7 @@ rule rm_mask:
     log:
         resolve_path('output/logs/rm_mask.{assembly}.log')
     threads:
-        multiprocessing.cpu_count()
+        psutil.cpu_count()
     singularity:
         te_tools
     shell:
@@ -112,7 +112,7 @@ rule rm_model:
     log:
         resolve_path('output/logs/rm_model.{assembly}.log')
     threads:
-        multiprocessing.cpu_count()
+        psutil.cpu_count()
     singularity:
         te_tools
     shell:
@@ -135,8 +135,6 @@ rule rm_build:
         wd = resolve_path('output/095_repeatmasker/{assembly}')
     log:
         resolve_path('output/logs/rm_build.{assembly}.log')
-    threads:
-        multiprocessing.cpu_count()
     singularity:
         te_tools
     shell:
