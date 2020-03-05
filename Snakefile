@@ -34,6 +34,7 @@ flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 purge_haplotigs = 'shub://TomHarrop/assembly-utils:purge_haplotigs_0b9afdf'
 racon_chunks = 'shub://TomHarrop/racon-chunks:racon-chunks_0.0.6'
+te_tools = 'shub://TomHarrop/funannotate-singularity:tetools_1.1'
 
 # resources
 cpus = psutil.cpu_count()
@@ -68,7 +69,85 @@ busco_targets = {
 rule target:
     input:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
+               assembly=list(busco_targets.keys())),
+        expand('output/095_repeatmasker/{assembly}/{assembly}.fa.masked',
                assembly=list(busco_targets.keys()))
+
+# repeat modeller / masker
+rule rm_mask:
+    input:
+        cons = 'output/095_repeatmasker/{assembly}/consensi.fa',
+        fasta = 'output/095_repeatmasker/{assembly}/{assembly}.fa'
+    output:
+        'output/095_repeatmasker/{assembly}/{assembly}.fa.masked'
+    params:
+        wd = resolve_path('output/095_repeatmasker/{assembly}'),
+        lib = lambda wildcards, input: resolve_path(input.cons),
+        fasta = lambda wildcards, input: resolve_path(input.fasta)
+    log:
+        resolve_path('output/logs/rm_mask.{assembly}.log')
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        te_tools
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'RepeatMasker '
+        '-engine ncbi '
+        '-pa {threads} '
+        '-lib {params.lib} '
+        '-dir {params.wd} '
+        '-gccalc -xsmall -gff -html '
+        '{params.fasta} '
+        '&> {log}'
+
+rule rm_model:
+    input:
+        'output/095_repeatmasker/{assembly}/{assembly}.translation'
+    output:
+        'output/095_repeatmasker/{assembly}/families.stk',
+        'output/095_repeatmasker/{assembly}/consensi.fa'
+    params:
+        wd = resolve_path('output/095_repeatmasker/{assembly}'),
+    log:
+        resolve_path('output/logs/rm_model.{assembly}.log')
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        te_tools
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'RepeatModeler '
+        '-database {wildcards.assembly} '
+        '-engine ncbi '
+        '-pa {threads} '
+        '-dir {params.wd} '
+        # '-recoverDir {params.wd} '
+        '&> {log}'
+
+rule rm_build:
+    input:
+        unpack(busco_target_resolver),
+    output:
+        fa = 'output/095_repeatmasker/{assembly}/{assembly}.fa',
+        tx = 'output/095_repeatmasker/{assembly}/{assembly}.translation'
+    params:
+        wd = resolve_path('output/095_repeatmasker/{assembly}')
+    log:
+        resolve_path('output/logs/rm_build.{assembly}.log')
+    threads:
+        multiprocessing.cpu_count()
+    singularity:
+        te_tools
+    shell:
+        'cp {input.fasta} {output.fa} ; '
+        'cd {params.wd} || exit 1 ; '
+        'BuildDatabase '
+        '-name {wildcards.assembly} '
+        '-engine ncbi '
+        '-dir {params.wd} '
+        '&> {log} '
+
 # busco
 rule busco:
     input:
