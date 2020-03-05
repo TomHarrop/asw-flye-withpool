@@ -50,6 +50,8 @@ busco_targets = {
         'output/020_flye-assemble/assembly.fasta',
     'flye_asw47':
         'output/027_flye-asw47/assembly.fasta',
+    'flye_pool_only':
+        'output/028_flye-pool-only/assembly.fasta',
     'purge_haplotigs':
         'output/030_purge-haplotigs/curated.fasta',
     'asw47_polished':
@@ -320,6 +322,29 @@ rule flye_asw47:
         min(128, psutil.cpu_count())
     log:
         'output/logs/flye_asw47.log'
+    singularity:
+        flye
+    shell:
+        'flye '
+        '--nano-raw {input}  '
+        '--genome-size {params.size} '
+        '--out-dir {params.outdir} '
+        '--threads {threads} '
+        '&> {log}'
+
+
+rule flye_pool_only:
+    input:
+        pool = 'output/010_raw/pool.fq'
+    output:
+        'output/028_flye-pool-only/assembly.fasta'
+    params:
+        outdir = 'output/028_flye-pool-only',
+        size = '1.2g'
+    threads:
+        min(128, psutil.cpu_count())
+    log:
+        'output/logs/flye_pool_only.log'
     singularity:
         flye
     shell:
