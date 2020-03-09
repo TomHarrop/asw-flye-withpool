@@ -29,6 +29,7 @@ pool_raw = 'data/ont-reads/pool.fq.gz'
 asw47_raw = 'data/ont-reads/asw47.fq.gz'
 
 # containers
+bbduk = 'shub://TomHarrop/seq-utils:bbmap_38.76'
 busco = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
