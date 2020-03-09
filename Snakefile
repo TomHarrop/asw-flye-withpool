@@ -70,7 +70,7 @@ rule target:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
                assembly=list(busco_targets.keys())),
         expand('output/095_repeatmasker/{assembly}/{assembly}.fa.masked',
-               assembly=list(busco_targets.keys()))
+               assembly=list(busco_targets.keys())),
         expand('output/090_stats/{assembly}.tsv',
                assembly=list(busco_targets.keys()))
 
