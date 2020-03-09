@@ -71,6 +71,8 @@ rule target:
                assembly=list(busco_targets.keys())),
         expand('output/095_repeatmasker/{assembly}/{assembly}.fa.masked',
                assembly=list(busco_targets.keys()))
+        expand('output/090_stats/{assembly}.tsv',
+               assembly=list(busco_targets.keys()))
 
 # repeat modeller / masker
 rule rm_mask:
@@ -140,6 +142,24 @@ rule rm_build:
         '-engine ncbi '
         '-dir {params.wd} '
         '&> {log} '
+
+# stats
+rule assembly_stats:
+    input:
+        unpack(busco_target_resolver),
+    output:
+        stats = 'output/090_stats/{assembly}.tsv'
+    log:
+        'output/logs/assembly_stats.{assembly}.log'
+    singularity:
+        bbduk
+    shell:
+        'stats.sh '
+        'in={input} '
+        'minscaf=1000 '
+        'format=3 '
+        '> {output} '
+        '2> {log}'
 
 # busco
 rule busco:
