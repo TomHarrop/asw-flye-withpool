@@ -79,7 +79,7 @@ rule target:
 rule rm_mask:
     input:
         cons = 'output/095_repeatmasker/{assembly}/consensi.fa',
-        fasta = 'output/095_repeatmasker/{assembly}/{assembly}.fa'
+        fasta = 'output/095_repeatmasker/{assembly}/{assembly}.filtered.fa'
     output:
         'output/095_repeatmasker/{assembly}/{assembly}.fa.masked'
     params:
@@ -111,6 +111,8 @@ rule rm_model:
         wd = resolve_path('output/095_repeatmasker/{assembly}'),
     log:
         resolve_path('output/logs/rm_model.{assembly}.log')
+    threads:
+        min(64, cpus)
     singularity:
         te_tools
     shell:
@@ -125,9 +127,8 @@ rule rm_model:
 
 rule rm_build:
     input:
-        unpack(busco_target_resolver),
+        'output/095_repeatmasker/{assembly}/{assembly}.filtered.fa'
     output:
-        fa = 'output/095_repeatmasker/{assembly}/{assembly}.fa',
         tx = 'output/095_repeatmasker/{assembly}/{assembly}.translation'
     params:
         wd = resolve_path('output/095_repeatmasker/{assembly}')
@@ -136,13 +137,31 @@ rule rm_build:
     singularity:
         te_tools
     shell:
-        'cp {input.fasta} {output.fa} ; '
         'cd {params.wd} || exit 1 ; '
         'BuildDatabase '
         '-name {wildcards.assembly} '
         '-engine ncbi '
         '-dir {params.wd} '
         '&> {log} '
+
+rule rm_filter:
+    input:
+        unpack(busco_target_resolver)
+    output:
+        'output/095_repeatmasker/{assembly}/{assembly}.filtered.fa'
+    params:
+        minscaf = 50000
+    log:
+        'output/logs/rm_filter.{assembly}.log'
+    singularity:
+        bbduk   
+    shell:
+        'reformat.sh '
+        'in={input.fasta} '
+        'int=f '
+        'minlength={params.minscaf} '
+        'out={output} '
+        '2>{log}'
 
 # stats
 rule assembly_stats:
