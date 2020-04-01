@@ -111,8 +111,8 @@ rule rm_model:
         wd = resolve_path('output/095_repeatmasker/{assembly}'),
     log:
         resolve_path('output/logs/rm_model.{assembly}.log')
-    threads:
-        min(64, cpus)
+    # threads:
+    #     min(64, cpus)
     singularity:
         te_tools
     shell:
