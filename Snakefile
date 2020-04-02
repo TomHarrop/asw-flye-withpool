@@ -122,7 +122,7 @@ rule rm_model:
         '-engine ncbi '
         '-pa {cpus} '
         '-dir {params.wd} '
-        # '-recoverDir {params.wd} '
+        '-recoverDir {params.wd} '
         '&> {log}'
 
 rule rm_build:
