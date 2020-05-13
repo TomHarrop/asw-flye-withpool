@@ -156,18 +156,22 @@ rule rm_build:
 
 rule rm_sort:
     input:
-        'output/095_repeatmasker/{assembly}/{assembly}.clean.fa'
+        fasta = 'output/095_repeatmasker/{assembly}/{assembly}.clean.fa'
     output:
         'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa'
+    params:
+        fasta = lambda wildcards, input: resolve_path(input.fasta),
+        wd = 'output/095_repeatmasker/{assembly}',
     log:
-        'output/logs/rm_sort.{assembly}.log'
+        resolve_path('output/logs/rm_sort.{assembly}.log')
     singularity:
         funannotate
     shell:
         'bash -c \''
+        'cd {params.wd} || exit 1 ; '
         'funannotate sort '
-        '-i {input} '
-        '-o {output} '
+        '-i {params.fasta} '
+        '-o {wildcards.assembly}.sorted.fa '
         '\' &> {log}'
 
 
@@ -176,15 +180,19 @@ rule rm_clean:
         unpack(busco_target_resolver)
     output:
         'output/095_repeatmasker/{assembly}/{assembly}.clean.fa'
+    params:
+        fasta = lambda wildcards, input: resolve_path(input.fasta),
+        wd = 'output/095_repeatmasker/{assembly}',
     log:
-        'output/logs/rm_clean.{assembly}.log'
+        resolve_path('output/logs/rm_clean.{assembly}.log')
     singularity:
         funannotate
     shell:
         'bash -c \''
+        'cd {params.wd} || exit 1 ; '
         'funannotate clean '
-        '-i {input} '
-        '-o {output} '
+        '-i {params.fasta} '
+        '-o {wildcards.assembly}.clean.fa '
         '\' &> {log}'
 
 # stats
