@@ -166,8 +166,8 @@ rule rm_sort:
     shell:
         'bash -c \''
         'funannotate sort '
-        '--input {input} '
-        '--output {output} '
+        '-i {input} '
+        '-o {output} '
         '\' &> {log}'
 
 
@@ -183,8 +183,8 @@ rule rm_clean:
     shell:
         'bash -c \''
         'funannotate clean '
-        '--input {input} '
-        '--output {output} '
+        '-i {input} '
+        '-o {output} '
         '\' &> {log}'
 
 # stats
