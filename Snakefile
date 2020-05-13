@@ -32,10 +32,13 @@ asw47_raw = 'data/ont-reads/asw47.fq.gz'
 bbduk = 'shub://TomHarrop/seq-utils:bbmap_38.76'
 busco = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 flye = 'shub://TomHarrop/assemblers:flye_2.6-g47548b8'
+funannotate = ('shub://TomHarrop/funannotate-singularity:'
+               'funannotate-conda_1.7.4')
 porechop = 'shub://TomHarrop/ont-containers:porechop_0.2.4'
 purge_haplotigs = 'shub://TomHarrop/assembly-utils:purge_haplotigs_0b9afdf'
 racon_chunks = 'shub://TomHarrop/racon-chunks:racon-chunks_0.0.6'
 te_tools = 'shub://TomHarrop/funannotate-singularity:tetools_1.1'
+
 
 # resources
 cpus = psutil.cpu_count()
@@ -62,6 +65,13 @@ busco_targets = {
         'output/040_racon-illumina/purge_haplotigs/racon.fasta'
 }
 
+rm_targets = [
+    'flye_polish',
+    'flye_asw47',
+    'flye_pool_only',
+    'purge_haplotigs']
+
+
 #########
 # RULES #
 #########
@@ -71,7 +81,7 @@ rule target:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
                assembly=list(busco_targets.keys())),
         expand('output/095_repeatmasker/{assembly}/{assembly}.fa.masked',
-               assembly=list(busco_targets.keys())),
+               assembly=rm_targets),
         expand('output/090_stats/{assembly}.tsv',
                assembly=list(busco_targets.keys()))
 
@@ -79,7 +89,7 @@ rule target:
 rule rm_mask:
     input:
         cons = 'output/095_repeatmasker/{assembly}/consensi.fa',
-        fasta = 'output/095_repeatmasker/{assembly}/{assembly}.filtered.fa'
+        fasta = 'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa'
     output:
         'output/095_repeatmasker/{assembly}/{assembly}.fa.masked'
     params:
@@ -111,8 +121,8 @@ rule rm_model:
         wd = resolve_path('output/095_repeatmasker/{assembly}'),
     log:
         resolve_path('output/logs/rm_model.{assembly}.log')
-    # threads:
-    #     min(64, cpus)
+    threads:
+        workflow.cores // 4
     singularity:
         te_tools
     shell:
@@ -120,14 +130,14 @@ rule rm_model:
         'RepeatModeler '
         '-database {wildcards.assembly} '
         '-engine ncbi '
-        '-pa {cpus} '
+        '-pa {threads} '
         '-dir {params.wd} '
         '-recoverDir {params.wd} '
         '&> {log}'
 
 rule rm_build:
     input:
-        'output/095_repeatmasker/{assembly}/{assembly}.filtered.fa'
+        'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa'
     output:
         tx = 'output/095_repeatmasker/{assembly}/{assembly}.translation'
     params:
@@ -144,24 +154,38 @@ rule rm_build:
         '-dir {params.wd} '
         '&> {log} '
 
-rule rm_filter:
+rule rm_sort:
+    input:
+        'output/095_repeatmasker/{assembly}/{assembly}.clean.fa'
+    output:
+        'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa'
+    log:
+        'output/logs/rm_sort.{assembly}.log'
+    singularity:
+        funannotate
+    shell:
+        'bash -c \''
+        'funannotate sort '
+        '--input {input} '
+        '--output {output} '
+        '\' &> {log}'
+
+
+rule rm_clean:
     input:
         unpack(busco_target_resolver)
     output:
-        'output/095_repeatmasker/{assembly}/{assembly}.filtered.fa'
-    params:
-        minscaf = 50000
+        'output/095_repeatmasker/{assembly}/{assembly}.clean.fa'
     log:
-        'output/logs/rm_filter.{assembly}.log'
+        'output/logs/rm_clean.{assembly}.log'
     singularity:
-        bbduk   
+        funannotate
     shell:
-        'reformat.sh '
-        'in={input.fasta} '
-        'int=f '
-        'minlength={params.minscaf} '
-        'out={output} '
-        '2>{log}'
+        'bash -c \''
+        'funannotate clean '
+        '--input {input} '
+        '--output {output} '
+        '\' &> {log}'
 
 # stats
 rule assembly_stats:
