@@ -185,12 +185,15 @@ rule rm_clean:
         wd = 'output/095_repeatmasker/{assembly}',
     log:
         resolve_path('output/logs/rm_clean.{assembly}.log')
+    threads:
+        max(2, workflow.cores // 4)
     singularity:
         funannotate
     shell:
         'bash -c \''
         'cd {params.wd} || exit 1 ; '
         'funannotate clean '
+        '--cpus {threads} '
         '-i {params.fasta} '
         '-o {wildcards.assembly}.clean.fa '
         '\' &> {log}'
