@@ -132,7 +132,7 @@ rule rm_model:
         '-engine ncbi '
         '-pa {threads} '
         '-dir {params.wd} '
-        '-recoverDir {params.wd} '
+        # '-recoverDir {params.wd} '
         '&> {log}'
 
 rule rm_build:
