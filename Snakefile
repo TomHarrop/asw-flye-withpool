@@ -80,7 +80,8 @@ rule target:
     input:
         expand('output/099_busco/run_{assembly}/full_table_{assembly}.tsv',
                assembly=list(busco_targets.keys())),
-        expand('output/095_repeatmasker/{assembly}/{assembly}.fa.masked',
+        expand(('output/095_repeatmasker/{assembly}/'
+                '{assembly}.sorted.fa.masked'),
                assembly=rm_targets),
         expand('output/090_stats/{assembly}.tsv',
                assembly=list(busco_targets.keys()))
@@ -91,7 +92,7 @@ rule rm_mask:
         cons = 'output/095_repeatmasker/{assembly}/consensi.fa',
         fasta = 'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa'
     output:
-        'output/095_repeatmasker/{assembly}/{assembly}.fa.masked'
+        'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa.masked'
     params:
         wd = resolve_path('output/095_repeatmasker/{assembly}'),
         lib = lambda wildcards, input: resolve_path(input.cons),
