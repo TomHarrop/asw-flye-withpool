@@ -127,12 +127,15 @@ rule rm_classify:
         wd = resolve_path('output/095_repeatmasker/{assembly}'),
     log:
         resolve_path('output/logs/rm_classify.{assembly}.log')
+    threads:
+        workflow.cores // 4
     singularity:
         te_tools
     shell:
         'cd {params.wd} || exit 1 ; '
         'RepeatClassifier '
         '-engine ncbi '
+        '-pa {threads} '
         '-consensi consensi.fa '
         '-stockholm families.stk '
         '&> {log}'
