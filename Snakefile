@@ -112,6 +112,32 @@ rule rm_mask:
         '{params.fasta} '
         '&> {log}'
 
+
+rule classify:
+    input:
+        'output/095_repeatmasker/purge_haplotigs/consensi.fa.classified'
+
+rule rm_classify:
+    input:
+        'output/095_repeatmasker/{assembly}/families.stk',
+        'output/095_repeatmasker/{assembly}/consensi.fa'
+    output:
+        'output/095_repeatmasker/{assembly}/consensi.fa.classified'
+    params:
+        wd = resolve_path('output/095_repeatmasker/{assembly}'),
+    log:
+        resolve_path('output/logs/rm_classify.{assembly}.log')
+    singularity:
+        te_tools
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'RepeatClassifier '
+        '-engine ncbi '
+        '-consensi consensi.fa '
+        '-stockholm families.stk '
+        '&> {log}'
+
+
 rule rm_model:
     input:
         'output/095_repeatmasker/{assembly}/{assembly}.translation'
