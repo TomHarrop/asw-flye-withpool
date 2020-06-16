@@ -89,7 +89,7 @@ rule target:
 # repeat modeller / masker
 rule rm_mask:
     input:
-        cons = 'output/095_repeatmasker/{assembly}/consensi.fa',
+        cons = 'output/095_repeatmasker/{assembly}/consensi.fa.classified',
         fasta = 'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa'
     output:
         'output/095_repeatmasker/{assembly}/{assembly}.sorted.fa.masked'
@@ -112,10 +112,6 @@ rule rm_mask:
         '{params.fasta} '
         '&> {log}'
 
-
-rule classify:
-    input:
-        'output/095_repeatmasker/purge_haplotigs/consensi.fa.classified'
 
 rule rm_classify:
     input:
